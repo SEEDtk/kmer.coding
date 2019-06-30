@@ -12,7 +12,7 @@ package org.theseed.genomes.kmers;
  * @author Bruce Parrello
  *
  */
-public class DnaKmer {
+public class DnaKmer implements Comparable<DnaKmer> {
 
     // FIELDS
     /** integer representation of the kmer */
@@ -35,7 +35,7 @@ public class DnaKmer {
      * @param basePairs	DNA sequence to use
      */
     public DnaKmer(String basePairs) {
-        this.kIdx = fromString(basePairs, 0);
+        this.kIdx = fromString(basePairs, 1);
     }
 
     /**
@@ -53,6 +53,13 @@ public class DnaKmer {
      */
     public DnaKmer() {
         this.kIdx = NULL;
+    }
+
+    /**
+     * Create a DNA kmer from an index number.
+     */
+    public DnaKmer(int kIdx) {
+        this.kIdx = kIdx;
     }
 
     /**
@@ -120,7 +127,7 @@ public class DnaKmer {
      * Store a new value for the kmer index.
      * @param newIdx	new index to store
      */
-    protected void setIdx(int newIdx) {
+    public void setIdx(int newIdx) {
         this.kIdx = newIdx;
     }
 
@@ -160,7 +167,7 @@ public class DnaKmer {
      */
     static public int fromString(String sequence, int pos) {
         int retVal = 0;
-        if (pos + kmerSize > sequence.length()) {
+        if ((pos - 1) + kmerSize > sequence.length()) {
             retVal = EOF;
         } else {
             int n = pos + kmerSize - 1;
@@ -185,6 +192,43 @@ public class DnaKmer {
             }
         }
         return retVal;
+    }
+
+    /**
+     * @return the number of possible kmers
+     */
+    public static int maxKmers() {
+        return 4 << (2 * (kmerSize - 1));
+    }
+
+    /**
+     * Increment this kmer to get the next sequential kmer by index.
+     */
+    public void increment() {
+        this.kIdx++;
+    }
+
+    @Override
+    public int compareTo(DnaKmer arg0) {
+        // Insure EOF compares last.
+        int retVal;
+        if (this.kIdx == DnaKmer.EOF) {
+            if (arg0.kIdx == DnaKmer.EOF) {
+                retVal = 0;
+            } else {
+                retVal = 1;
+            }
+        } else if (arg0.kIdx == DnaKmer.EOF) {
+            retVal = -1;
+        } else {
+            retVal = (this.kIdx - arg0.kIdx);
+        }
+        return retVal;
+    }
+
+    @Override
+    public boolean equals(Object arg0) {
+        return (this.kIdx == ((DnaKmer) arg0).kIdx);
     }
 
 

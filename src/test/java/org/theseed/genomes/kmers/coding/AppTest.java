@@ -101,7 +101,7 @@ public class AppTest
     }
 
     private static final String mySequence = "atgaatgaacgttaccagtgtttaaaaactxaaagaatatcaggcacttttatcttccaa";
-                                           // 000000000111111111122222222223333333333444444444455555555555
+                                           // 000000000111111111122222222223333333333444444444455555555556
                                            // 123456789012345678901234567890123456789012345678901234567890
 
     /**
@@ -130,7 +130,7 @@ public class AppTest
             assertEquals("Iterated kmer did not recurse at position " + pos + ".",
                     mySequence.substring(pos-1, pos+9), kmer);
         }
-        assertEquals("Iterator ended too soon.", mySequence.length() - 9, iterator.getPos());
+        assertEquals("Iterator ended too soon.", mySequence.length() - 8, iterator.getPos());
     }
 
     /**
@@ -328,7 +328,7 @@ public class AppTest
             // This will remember the strand of the last location found.
             char strand = '0';
             // This will be set to TRUE if a location is segmented.
-            Boolean invalid = false;
+            boolean invalid = false;
             // This will count the locations found.
             int found = 0;
             for (Location loc2 : locs) {
@@ -372,68 +372,78 @@ public class AppTest
         assertEquals("Incorrect strand found for test position 30984.", '0', contig0036.computeStrand(30984));
     }
 
+
     /**
-     * Basic test for kmer frames.
+     * The test for the insanely big kmer counter.
      */
-    public void testKmerFrames() {
-        KmerFrameCounts myCounts = new KmerFrameCounts();
+    public void testKmerCounter() {
+        // Use small kmers to fit in debugger.
+        DnaKmer.setSize(9);
+        KmerFrameCounter bigCounter = new KmerFrameCounter();
+        // Choose a kmer to manipulate.
+        DnaKmer myKmer = new DnaKmer("actgtccat");
         // Verify that an uncounted kmer's best frame is invalid.
-        assertEquals("Valid frame returned for empty kmer.", Frame.XX, myCounts.getBest());
-        assertEquals("Nonzero fraction returned for empty kmer.", 0.0, myCounts.getFrac(Frame.F0));
+        assertEquals("Valid frame returned for empty kmer.", Frame.XX, bigCounter.getBest(myKmer));
+        assertEquals("Nonzero fraction returned for empty kmer.", 0.0,
+                bigCounter.getFrac(myKmer, Frame.F0), 0.0);
         // Test iterating the counts.
         for (Frame frm : Frame.all) {
-            myCounts.increment(frm);
+            bigCounter.increment(myKmer, frm);
         }
         // Put some counts in.
         for (int i = 1; i <= 39; i++) {
-            myCounts.increment(Frame.M3);
+            bigCounter.increment(myKmer, Frame.M3);
         }
         for (int i = 1; i <= 59; i++) {
-            myCounts.increment(Frame.M2);
+            bigCounter.increment(myKmer, Frame.M2);
         }
         for (int i = 1; i <= 99; i++) {
-            myCounts.increment(Frame.M1);
+            bigCounter.increment(myKmer, Frame.M1);
         }
         for (int i = 1; i <= 199; i++) {
-            myCounts.increment(Frame.F0);
+            bigCounter.increment(myKmer, Frame.F0);
         }
         for (int i = 1; i <= 499; i++) {
-            myCounts.increment(Frame.P1);
+            bigCounter.increment(myKmer, Frame.P1);
         }
         for (int i = 1; i <= 19; i++) {
-            myCounts.increment(Frame.P2);
+            bigCounter.increment(myKmer, Frame.P2);
         }
         for (int i = 1; i <= 79; i++) {
-            myCounts.increment(Frame.P3);
+            bigCounter.increment(myKmer, Frame.P3);
         }
         // Verify that the invalid frame doesn't crash us.
-        myCounts.increment(Frame.XX);
-        assertEquals("Invalid frame has nonzero count.", 0, myCounts.getCount(Frame.XX));
+        bigCounter.increment(myKmer, Frame.XX);
+        assertEquals("Invalid frame has nonzero count.", 0, bigCounter.getCount(myKmer, Frame.XX));
         // Verify the above counts.
-        assertEquals("Count error in frame M3.", 40, myCounts.getCount(Frame.M3));
-        assertEquals("Count error in frame M2.", 60, myCounts.getCount(Frame.M2));
-        assertEquals("Count error in frame M1.", 100, myCounts.getCount(Frame.M1));
-        assertEquals("Count error in frame F0.", 200, myCounts.getCount(Frame.F0));
-        assertEquals("Count error in frame P1.", 500, myCounts.getCount(Frame.P1));
-        assertEquals("Count error in frame P2.", 20, myCounts.getCount(Frame.P2));
-        assertEquals("Count error in frame P3.", 80, myCounts.getCount(Frame.P3));
+        assertEquals("Count error in frame M3.", 40, bigCounter.getCount(myKmer, Frame.M3));
+        assertEquals("Count error in frame M2.", 60, bigCounter.getCount(myKmer, Frame.M2));
+        assertEquals("Count error in frame M1.", 100, bigCounter.getCount(myKmer, Frame.M1));
+        assertEquals("Count error in frame F0.", 200, bigCounter.getCount(myKmer, Frame.F0));
+        assertEquals("Count error in frame P1.", 500, bigCounter.getCount(myKmer, Frame.P1));
+        assertEquals("Count error in frame P2.", 20, bigCounter.getCount(myKmer, Frame.P2));
+        assertEquals("Count error in frame P3.", 80, bigCounter.getCount(myKmer, Frame.P3));
         // Verify the fractions.
-        assertEquals("Frac error in frame M3.", 0.040, myCounts.getFrac(Frame.M3));
-        assertEquals("Frac error in frame M2.", 0.060, myCounts.getFrac(Frame.M2));
-        assertEquals("Frac error in frame M1.", 0.100, myCounts.getFrac(Frame.M1));
-        assertEquals("Frac error in frame F0.", 0.200, myCounts.getFrac(Frame.F0));
-        assertEquals("Frac error in frame P1.", 0.500, myCounts.getFrac(Frame.P1));
-        assertEquals("Frac error in frame P2.", 0.020, myCounts.getFrac(Frame.P2));
-        assertEquals("Frac error in frame P3.", 0.080, myCounts.getFrac(Frame.P3));
+        assertEquals("Frac error in frame M3.", 0.040, bigCounter.getFrac(myKmer, Frame.M3));
+        assertEquals("Frac error in frame M2.", 0.060, bigCounter.getFrac(myKmer, Frame.M2));
+        assertEquals("Frac error in frame M1.", 0.100, bigCounter.getFrac(myKmer, Frame.M1));
+        assertEquals("Frac error in frame F0.", 0.200, bigCounter.getFrac(myKmer, Frame.F0));
+        assertEquals("Frac error in frame P1.", 0.500, bigCounter.getFrac(myKmer, Frame.P1));
+        assertEquals("Frac error in frame P2.", 0.020, bigCounter.getFrac(myKmer, Frame.P2));
+        assertEquals("Frac error in frame P3.", 0.080, bigCounter.getFrac(myKmer, Frame.P3));
         // Verify the best frame.
-        assertSame("Incorrect best frame.", Frame.P1, myCounts.getBest());
+        assertSame("Incorrect best frame.", Frame.P1, bigCounter.getBest(myKmer));
         // Check overflow.
         for (int i = 1; i <= 40000; i++) {
-            myCounts.increment(Frame.P1);
+            bigCounter.increment(myKmer, Frame.P1);
         }
-        assertEquals("Overflow occurred above 32K.", 40500, myCounts.getCount(Frame.P1));
-        assertEquals("Invalid fraction at overflow point.", 0.988, myCounts.getFrac(Frame.P1), 0.001);
-        assertEquals("Invalid frame choice at overflow point.", Frame.P1, myCounts.getBest());
+        assertEquals("Overflow occurred above 32K.", 40500, bigCounter.getCount(myKmer, Frame.P1));
+        assertEquals("Invalid fraction at overflow point.", 0.988, bigCounter.getFrac(myKmer, Frame.P1), 0.001);
+        assertEquals("Invalid frame choice at overflow point.", Frame.P1, bigCounter.getBest(myKmer));
+        // Verify that only our one kmer is found by the iterator.
+        for (DnaKmer kmer : bigCounter) {
+            assertEquals("Incorrect kmer found.", kmer, myKmer);
+        }
     }
 }
 

@@ -73,8 +73,8 @@ public class Region implements Comparable<Region> {
     /**
      * @return TRUE if a region with the same extent as this one exists in the collection
      */
-    public Boolean containedIn(Collection<Region> regions) {
-        Boolean retVal = false;
+    public boolean containedIn(Collection<Region> regions) {
+        boolean retVal = false;
         Iterator<Region> iter = regions.iterator();
         while (! retVal && iter.hasNext()) {
             Region r = iter.next();

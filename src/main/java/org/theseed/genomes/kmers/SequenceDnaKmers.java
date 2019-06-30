@@ -28,7 +28,7 @@ public class SequenceDnaKmers extends DnaKmer {
         // Save the sequence.
         this.sequence = sequence;
         // Denote we haven't started.
-        this.pos = 0;
+        this.pos = 1;
     }
 
     /**
@@ -43,7 +43,7 @@ public class SequenceDnaKmers extends DnaKmer {
      *
      * @return TRUE if successful, FALSE if we are at end-of-sequence
      */
-    public Boolean nextKmer() {
+    public boolean nextKmer() {
         this.pos++;
         int retVal = DnaKmer.fromString(this.sequence, this.pos);
         while (retVal == DnaKmer.NULL) {

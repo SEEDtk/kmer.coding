@@ -54,8 +54,8 @@ public class LocationList implements Iterable<Location> {
      *
      * @return TRUE if the location was added, FALSE if it belongs to a different contig
      */
-    public Boolean addLocation(Location loc) {
-        Boolean retVal = false;
+    public boolean addLocation(Location loc) {
+        boolean retVal = false;
         if (contigId.equals(loc.getContigId())) {
             // Here we are on the same contig, so we can add the location.  Create a single-region
             // copy.

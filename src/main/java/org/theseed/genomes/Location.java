@@ -24,7 +24,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     /** list of regions covered by the location */
     protected ArrayList<Region> regions;
     /** TRUE if this location is valid, else FALSE */
-    protected Boolean valid;
+    protected boolean valid;
 
 
     /**
@@ -96,7 +96,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     /**
      * @return TRUE if this location is multi-regional, else FALSE
      */
-    public Boolean isSegmented() {
+    public boolean isSegmented() {
         return (this.regions.size() > 1);
     }
 
@@ -292,7 +292,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
      *
      * @param other	other location to check
      */
-    public Boolean contains(Location other) {
+    public boolean contains(Location other) {
         return (this.getContigId() == other.getContigId() &&
                 this.getLeft() <= other.getLeft() && this.getRight() >= other.getRight());
     }
