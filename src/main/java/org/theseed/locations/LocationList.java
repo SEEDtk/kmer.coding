@@ -1,13 +1,17 @@
 /**
  *
  */
-package org.theseed.genomes;
+package org.theseed.locations;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
+
+import org.theseed.genomes.Contig;
+import org.theseed.genomes.Feature;
+import org.theseed.genomes.Genome;
 
 /**
  * @author Bruce Parrello

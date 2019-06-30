@@ -1,5 +1,7 @@
 package org.theseed.genomes;
 
+import org.theseed.locations.Location;
+
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonKey;
 import com.github.cliftonlabs.json_simple.JsonObject;

@@ -1,4 +1,4 @@
-package org.theseed.genomes;
+package org.theseed.locations;
 
 /**
  * Enumeration describing the seven coding frames.  Note the special frame XX indicates an invalid result.

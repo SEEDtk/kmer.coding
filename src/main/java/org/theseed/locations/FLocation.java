@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes;
+package org.theseed.locations;
 
 /**
  * This represents a location on the plus strand.

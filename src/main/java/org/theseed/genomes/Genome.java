@@ -10,6 +10,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.theseed.locations.Location;
+import org.theseed.locations.Region;
+
 import com.github.cliftonlabs.json_simple.JsonException;
 import com.github.cliftonlabs.json_simple.JsonKey;
 import com.github.cliftonlabs.json_simple.JsonObject;

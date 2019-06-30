@@ -7,8 +7,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import org.theseed.genomes.Frame;
+import org.theseed.genomes.Genome;
 import org.theseed.genomes.kmers.DnaKmer;
+import org.theseed.locations.Frame;
 
 /**
  * @author Bruce Parrello
@@ -119,6 +120,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         }
         return retVal;
     }
+    
 
     /**
      * Iterator class for finding kmers with nonzero counts.
@@ -165,5 +167,16 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         }
 
     }
+
+
+    /**
+     * Count all of the kmers in a specified genome.
+     * 
+     * @param genome	the genome whose kmers are to be counted
+     */
+	public void processGenome(Genome genome) {
+		// TODO create the sequence map
+		
+	}
 
 }

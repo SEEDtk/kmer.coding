@@ -13,12 +13,12 @@ import com.github.cliftonlabs.json_simple.JsonException;
 
 import org.theseed.genomes.Feature;
 import org.theseed.genomes.Genome;
-import org.theseed.genomes.Location;
-import org.theseed.genomes.LocationList;
-import org.theseed.genomes.Region;
-import org.theseed.genomes.Frame;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
+import org.theseed.locations.Frame;
+import org.theseed.locations.Location;
+import org.theseed.locations.LocationList;
+import org.theseed.locations.Region;
 
 /**
  * Unit test for simple App.
@@ -444,6 +444,9 @@ public class AppTest
         for (DnaKmer kmer : bigCounter) {
             assertEquals("Incorrect kmer found.", kmer, myKmer);
         }
+        // Now add in a genome.  There really is no practical way to check this, but we need
+        // no know it won't crash on us.
+        bigCounter.processGenome(this.myGto);
     }
 }
 
