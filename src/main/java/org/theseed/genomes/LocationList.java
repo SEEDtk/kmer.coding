@@ -3,6 +3,7 @@
  */
 package org.theseed.genomes;
 
+import java.util.Iterator;
 import java.util.TreeSet;
 
 /**
@@ -21,14 +22,16 @@ import java.util.TreeSet;
  * operations on this object.
  *
  */
-public class LocationList {
+public class LocationList implements Iterable<Location> {
 
 
     // FIELDS
     /** ID of the contig of interest */
-    String contigId;
+    private String contigId;
     /** sorted list of locations */
-    TreeSet<Location> locations;
+    private TreeSet<Location> locations;
+    /** utility location for point searches */
+    private Location searchLoc;
 
     /**
      * Construct a location list for a specified contig.
@@ -37,19 +40,19 @@ public class LocationList {
      */
     public LocationList(String contigId) {
         this.contigId = contigId;
-        this.locations = new TreeSet<Location>();
+        this.locations = new TreeSet<Location>(new Location.Sorter());
+        this.searchLoc = Location.create(contigId, "+", 1, 1);
     }
 
     /**
-     * Add a new feature to this location list.
+     * Add a new location to this location list.
      *
-     * @param feat	feature to add
+     * @param loc	location to add
      *
-     * @return TRUE if the feature was added, FALSE if it belongs to a different contig
+     * @return TRUE if the location was added, FALSE if it belongs to a different contig
      */
-    public Boolean addFeature(Feature feat) {
+    public Boolean addLocation(Location loc) {
         Boolean retVal = false;
-        Location loc = feat.getLocation();
         if (contigId.equals(loc.getContigId())) {
             // Here we are on the same contig, so we can add the location.  Create a single-region
             // copy.
@@ -62,16 +65,21 @@ public class LocationList {
             // we have to create invalid locations for the overlap area. Since there is no overlap
             // inside the list, for another location to overlap with this one, it must be either the
             // floor or ceiling. We remove the adjacent locations, resolve the overlaps, and then
-            // add them back.  This list will contain the locations we need to process.
+            // add them back.
             Location before = this.locations.floor(regionLoc);
             if (before != null && before.getRight() >= regionLoc.getLeft()) {
                 locations.remove(before);
                 regionLoc = this.ResolveOverlap(before, regionLoc);
             }
+            // There can only be one floor, but there may be many ceilings.  This is because
+            // the floor's left is definitely to the left of our left, but the ceiling's right
+            // could be inside our right, leaving room for more ceilings.  We have to do these
+            // in a loop.
             Location after = this.locations.ceiling(regionLoc);
-            if (after != null && after.getLeft() <= regionLoc.getRight()) {
+            while (after != null && after.getLeft() <= regionLoc.getRight()) {
                 locations.remove(after);
                 regionLoc = this.ResolveOverlap(regionLoc, after);
+                after = this.locations.ceiling(regionLoc);
             }
             // Add what's left of the new location.
             locations.add(regionLoc);
@@ -92,21 +100,30 @@ public class LocationList {
      */
     private Location ResolveOverlap(Location loc1, Location loc2) {
         Location retVal;
-        if (loc1.getRight() > loc2.getRight()) {
+        if (loc1.getRight() >= loc2.getRight()) {
             // Here the second location is wholly inside the first.  Mark it as invalid.
             loc2.invalidate();
             // Separate the part of loc1 that precedes loc2.
-            Location prefix = loc1.createEmpty();
-            prefix.putRegion(loc1.getLeft(), loc2.getLeft() - 1);
-            this.locations.add(prefix);
-            // Add the new location.
-            this.locations.add(loc2);
-            // Shorten loc1 and save it as the residual.
-            loc1.setLeft(loc2.getRight() + 1);
-            retVal = loc1;
+            if (loc1.getLeft() < loc2.getLeft()) {
+                Location prefix = loc1.createEmpty();
+                prefix.putRegion(loc1.getLeft(), loc2.getLeft() - 1);
+                this.locations.add(prefix);
+            }
+            // Now, the big question here is, does loc2 extend past loc1.
+            if (loc1.getRight() == loc2.getRight()) {
+                // It does not.  We return loc2 and discard loc1.
+                retVal = loc2;
+            } else {
+                // It does.  Add the new location.
+                this.locations.add(loc2);
+                // Shorten loc1 and save it as the residual.
+                loc1.setLeft(loc2.getRight() + 1);
+                retVal = loc1;
+            }
         } else if (loc1.getLeft() == loc2.getLeft()) {
             // Here the two locations start at the same place, but the second location
-            // extends past the first.  Invalidate the first, and shrink the second.
+            // extends past the first.  Invalidate the first and shorten the second
+            // as the residual.
             loc1.invalidate();
             this.locations.add(loc1);
             loc2.setLeft(loc1.getRight() + 1);
@@ -124,6 +141,37 @@ public class LocationList {
             this.locations.add(loc2);
         }
         return retVal;
+    }
+
+    /**
+     * Compute the strand for a position. The strand is '+' or '-' for an occupied point,
+     * and '0' for an unoccupied point.
+     *
+     * @param pos	a position on the contig
+     * @return '+' 	if the position is in a forward strand location, '-' if it is in a
+     * 				backward strand location, and '0' if it is between locations
+     */
+    public char computeStrand(int pos) {
+        char retVal = '0';
+        // Create a location for the target position.
+        searchLoc.setRegion(pos, pos);
+        // Find the floor-- that is, the last location before or on the position.
+        // Because none of the locations overlap, it will be the only one that could
+        // contain the position.
+        Location floor = this.locations.floor(searchLoc);
+        // If it covers our position, it is the strand we want.
+        if (floor != null && floor.getRight() >= pos) {
+            retVal = floor.getDir();
+        }
+        return retVal;
+    }
+
+    /**
+     * @return an iterator for the locations in this list
+     */
+    @Override
+    public Iterator<Location> iterator() {
+        return this.locations.iterator();
     }
 
 }

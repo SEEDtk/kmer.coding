@@ -5,12 +5,16 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.FileNotFoundException;
+import java.util.Collection;
+import java.util.Iterator;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
 import org.theseed.genomes.Feature;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.Location;
+import org.theseed.genomes.LocationList;
+import org.theseed.genomes.Region;
 import org.theseed.genomes.Frame;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
@@ -163,10 +167,185 @@ public class AppTest
     }
 
     /**
-     * Main test of locations.
+     * Test of plus-locations.
+     */
+    public void testPlusLocations() {
+        Location plusLoc = Location.create("mySequence1", "+");
+        plusLoc.addRegion(402, 500);
+        assertFalse("Segmentation error on single segment.", plusLoc.isSegmented());
+        assertTrue("Location does not default to valid.", plusLoc.isValid());
+        assertEquals("Invalid begin in plusLoc.", 402, plusLoc.getBegin());
+        plusLoc.addRegion(10, 200);
+        assertEquals("Invalid left position in plusLoc.", 10, plusLoc.getLeft());
+        assertEquals("Invalid right position in plusLoc.", 901, plusLoc.getRight());
+        assertEquals("Invalid contig in plusLoc.", "mySequence1", plusLoc.getContigId());
+        assertEquals("Invalid strand in plusLoc.", '+', plusLoc.getDir());
+        assertEquals("Invalid length in plusLoc.", 892, plusLoc.getLength());
+        assertEquals("Invalid begin in plusLoc after add.", 10, plusLoc.getBegin());
+        plusLoc.putRegion(1, 6);
+        assertEquals("Invalid left position in plusLoc after put.", 1, plusLoc.getLeft());
+        assertEquals("Invalid right position in plusLoc after put.", 901, plusLoc.getRight());
+        plusLoc.putRegion(250, 349);
+        assertEquals("Invalid left position in plusLoc after internal put.", 1, plusLoc.getLeft());
+        assertEquals("Invalid right position in plusLoc after internal put.", 901, plusLoc.getRight());
+        assertTrue("Segmentation error on multiple segments.", plusLoc.isSegmented());
+        plusLoc.invalidate();
+        assertFalse("Location did not invalidate.", plusLoc.isValid());
+        plusLoc.setLeft(260);
+        Collection<Region> plusRegions = plusLoc.getRegions();
+        for (Region region : plusRegions) {
+            int left = region.getLeft();
+            assertTrue("Invalid region " + region + " extends past 260.", left >= 260);
+        }
+        Location cloneLoc = (Location) plusLoc.clone();
+        assertEquals("Clone contig does not match.", plusLoc.getContigId(), cloneLoc.getContigId());
+        assertEquals("Clone direction does not match.", plusLoc.getDir(), cloneLoc.getDir());
+        assertEquals("Clone left does not match.", plusLoc.getLeft(), cloneLoc.getLeft());
+        assertEquals("Clone length does not match.", plusLoc.getLength(), cloneLoc.getLength());
+        assertTrue("Segmentation error on clone.", cloneLoc.isSegmented());
+        assertFalse("Validation error on clone.", cloneLoc.isValid());
+        Collection<Region> cloneRegions = cloneLoc.getRegions();
+        for (Region region : plusRegions) {
+            assertTrue("Region " + region + " not found in clone.", region.containedIn(cloneRegions));
+        }
+    }
+
+    /**
+     * Test of minus-locations.
+     */
+    public void testMinusLocations() {
+        Location minusLoc = Location.create("mySequence1", "-");
+        minusLoc.addRegion(901, 500);
+        assertFalse("Segmentation error on single segment.", minusLoc.isSegmented());
+        assertTrue("Location does not default to valid.", minusLoc.isValid());
+        assertEquals("Invalid begin in minusLoc.", 901, minusLoc.getBegin());
+        minusLoc.addRegion(209, 200);
+        assertEquals("Invalid left position in minusLoc.", 10, minusLoc.getLeft());
+        assertEquals("Invalid right position in minusLoc.", 901, minusLoc.getRight());
+        assertEquals("Invalid contig in minusLoc.", "mySequence1", minusLoc.getContigId());
+        assertEquals("Invalid strand in minusLoc.", '-', minusLoc.getDir());
+        assertEquals("Invalid length in minusLoc.", 892, minusLoc.getLength());
+        assertEquals("Invalid begin in minusLoc after add.", 901, minusLoc.getBegin());
+        minusLoc.putRegion(1, 6);
+        assertEquals("Invalid left position in minusLoc after put.", 1, minusLoc.getLeft());
+        assertEquals("Invalid right position in minusLoc after put.", 901, minusLoc.getRight());
+        minusLoc.putRegion(250, 349);
+        assertEquals("Invalid left position in minusLoc after internal put.", 1, minusLoc.getLeft());
+        assertEquals("Invalid right position in minusLoc after internal put.", 901, minusLoc.getRight());
+        assertTrue("Segmentation error on multiple segments.", minusLoc.isSegmented());
+        minusLoc.invalidate();
+        assertFalse("Location did not invalidate.", minusLoc.isValid());
+        minusLoc.setRight(260);
+        Collection<Region> minusRegions = minusLoc.getRegions();
+        for (Region region : minusRegions) {
+            int right = region.getRight();
+            assertTrue("Invalid region extends to " + right + " past 260.", right <= 260);
+        }
+        Location cloneLoc = (Location) minusLoc.clone();
+        assertEquals("Clone contig does not match.", minusLoc.getContigId(), cloneLoc.getContigId());
+        assertEquals("Clone direction does not match.", minusLoc.getDir(), cloneLoc.getDir());
+        assertEquals("Clone left does not match.", minusLoc.getLeft(), cloneLoc.getLeft());
+        assertEquals("Clone length does not match.", minusLoc.getLength(), cloneLoc.getLength());
+        assertTrue("Segmentation error on clone.", cloneLoc.isSegmented());
+        assertFalse("Validation error on clone.", cloneLoc.isValid());
+        Collection<Region> cloneRegions = cloneLoc.getRegions();
+        for (Region region :minusRegions) {
+            assertTrue("Region " + region + " not found in clone.", region.containedIn(cloneRegions));
+        }
+    }
+
+    /**
+     * Location comparison test
      */
     public void testLocations() {
+        Location loc1 = Location.create("myContig", "+", 1000, 1999);
+        Location loc2 = Location.create("myContig", "-", 1100, 1199);
+        Location loc3 = Location.create("myContig", "-", 1150, 1249);
+        Location loc4 = Location.create("yourContig", "-", 1150, 1249);
+        assertTrue("loc1 is not less than loc2.", loc1.compareTo(loc2) < 0);
+        assertTrue("loc2 is not less than loc3.", loc2.compareTo(loc3) < 0);
+        assertTrue("loc1 does not contain loc2.", loc1.contains(loc2));
+        assertFalse("loc2 contains loc3.", loc2.contains(loc3));
+        assertFalse("loc3 contains loc2.", loc3.contains(loc2));
+        assertFalse("loc1 contains loc4.", loc1.contains(loc4));
+    }
 
+    /**
+     * Main location list test
+     */
+    public void testLocationList() {
+        LocationList newList = new LocationList("myContig");
+        Location[] locs = { Location.create("myContig", "+", 10, 99, 102, 199),
+                            Location.create("myContig", "-", 100, 400),
+                            Location.create("myContig", "-", 500, 999),
+                            Location.create("myContig", "-", 3000, 3199),
+                            Location.create("myContig", "+", 4000, 4999),
+                            Location.create("myContig", "-", 4100, 4199),
+                            Location.create("myContig", "-", 6000, 6199),
+                            Location.create("myContig", "+", 5000, 5099),
+                            Location.create("myContig", "-", 5000, 5099),
+                            Location.create("myContig", "+", 5200, 5299),
+                            Location.create("myContig", "-", 5250, 5299),
+                            Location.create("myContig", "+", 5350, 5399),
+                            Location.create("myContig", "-", 5300, 5399),
+                            Location.create("myContig", "+", 6800, 7299),
+                            Location.create("myContig", "+", 8000, 8199),
+                            Location.create("myContig", "+", 8400, 8599),
+                            Location.create("myContig", "-", 8100, 8449),
+                            Location.create("myContig", "+", 9100, 9199),
+                            Location.create("myContig", "+", 9200, 9299),
+                            Location.create("myContig", "-", 9300, 9399),
+                            Location.create("myContig", "+", 9400, 9499),
+                            Location.create("myContig", "-", 9000, 9999),
+                          };
+        // Add all these locations to the list.
+        for (Location loc : locs) {
+            newList.addLocation(loc);
+        }
+        // Now we need to verify that none of the stored locations overlap.
+        Iterator<Location> iter = newList.iterator();
+        Location prev = iter.next();
+        while (iter.hasNext()) {
+            Location next = iter.next();
+            assertTrue(prev + " overlaps " + next, prev.getRight() < next.getLeft());
+        }
+        // Next, we want to show that every location in the location list is wholly
+        // contained in one or more locations of the input list.  If it is contained
+        // in more than one, or it is contained in a segmented one, it should be
+        // invalid.  Otherwise, it should be on the same strand.
+        for (Location loc : newList) {
+            // This will remember the strand of the last location found.
+            char strand = '0';
+            // This will be set to TRUE if a location is segmented.
+            Boolean invalid = false;
+            // This will count the locations found.
+            int found = 0;
+            for (Location loc2 : locs) {
+                if (loc2.contains(loc)) {
+                    strand = loc2.getDir();
+                    if (loc2.isSegmented()) {
+                        invalid = true;
+                    }
+                    found++;
+                }
+            }
+            if (found > 1) {
+                assertFalse(loc + " is valid but it is in " + found + " input locations.", loc.isValid());
+            } else if (invalid) {
+                assertFalse(loc + " is valid but it is in a segmented input location.", loc.isValid());
+            } else if (found == 0) {
+                fail(loc + " was not found in the input locations.");
+            } else {
+                assertEquals(loc + " is not on the correct strand.", strand, loc.getDir());
+            }
+        }
+        // Now for each input location, we need to show that every position is in a location
+        // of the location list.
+        for (Location loc : locs) {
+            for (int pos = loc.getLeft(); pos <= loc.getRight(); pos++) {
+                assertTrue("Position " + pos + " of location " + loc + " is not in the list.",
+                        newList.computeStrand(pos) != '0');
+            }
+        }
     }
 }
-

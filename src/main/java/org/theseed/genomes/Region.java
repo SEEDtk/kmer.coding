@@ -3,6 +3,9 @@
  */
 package org.theseed.genomes;
 
+import java.util.Collection;
+import java.util.Iterator;
+
 /** This class implements a single region on a contig.  Only the left and right positions (1-based) are given.
  *
  * @author Bruce Parrello
@@ -58,6 +61,29 @@ public class Region implements Comparable<Region> {
         this.right++;
     }
 
+    /**
+     * @return a string representation of this region
+     */
+    @Override
+    public String toString() {
+        String retVal = "[" + this.left + ", " + this.right + "]";
+        return retVal;
+    }
+
+    /**
+     * @return TRUE if a region with the same extent as this one exists in the collection
+     */
+    public Boolean containedIn(Collection<Region> regions) {
+        Boolean retVal = false;
+        Iterator<Region> iter = regions.iterator();
+        while (! retVal && iter.hasNext()) {
+            Region r = iter.next();
+            if (r.getLeft() == this.left && r.getRight() == this.right) {
+                retVal = true;
+            }
+        }
+        return retVal;
+    }
     /**
      * Compare two regions.  The left positions are compared first.  If they are equal, the longer
      * region compares first.

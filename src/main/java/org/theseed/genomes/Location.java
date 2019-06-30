@@ -5,6 +5,7 @@ package org.theseed.genomes;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 
 /**
  * This class implements a location.  The location is bacterial, so it represents multiple places on a single
@@ -117,7 +118,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
 
     /**
      * Compare two locations.  Locations are first sorted by contig. On the same contig, the earliest
-     * location will compare first.  If two locations at the same place, the longer one compares first.
+     * location will compare first.  If two locations at the same place, the shorter one compares first.
      * If they are the same length and start at the same place, the forward strand compares before the
      * reverse strand.
      *
@@ -131,10 +132,10 @@ public abstract class Location implements Comparable<Location>, Cloneable {
         retVal = this.getContigId().compareTo(arg0.getContigId());
         if (retVal == 0) {
             // Contigs the same, compare start positions.
-            retVal = this.getBegin() - arg0.getBegin();
+            retVal = this.getLeft() - arg0.getLeft();
             if (retVal == 0) {
                 // Start positions the same, compare lengths.
-                retVal = this.getLength() - arg0.getLength();
+                retVal = this.getRight() - arg0.getRight();
                 if (retVal == 0) {
                     // Really desperate now, compare the directions.
                     retVal = this.getDir() - arg0.getDir();
@@ -174,19 +175,30 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     }
 
     /**
-     * Create an empty location object for a strand on a contig.
+     * Create an location object for a strand on a contig.
      *
      * @param contigId	ID of the contig containing the location
      * @param strand	strand ("+" or "-") containing the location
+     * @param segments	list of segments to put in the location, alternating
+     * 					in the form left, right, left, right ...
      *
      * @return			returns an empty FLocation or BLocation for the contig
      */
-    public static Location create(String contigId, String strand) {
+    public static Location create(String contigId, String strand, int... segments) {
         Location retVal;
         if (strand.contentEquals("+")) {
             retVal = new FLocation(contigId);
         } else {
             retVal = new BLocation(contigId);
+        }
+        // If we have segments from the user, we need to do some fancy footwork,
+        // since they come in [left, right] pairs.
+        if ((segments.length & 1) == 1) {
+            throw new IllegalArgumentException("Odd number of segment specifiers in location construction.");
+        } else {
+            for (int i = 0; i < segments.length; i += 2) {
+                retVal.putRegion(segments[i], segments[i+1]);
+            }
         }
         return retVal;
     }
@@ -249,7 +261,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     @Override
     public Object clone() {
         // Create a new copy of the location on the same contig strand.
-        Location retVal = Location.create(this.contigId, String.valueOf(this.getDir()));
+        Location retVal = this.createEmpty();
         // Copy the other fields.
         retVal.valid = this.valid;
         // Copy the regions.
@@ -259,11 +271,30 @@ public abstract class Location implements Comparable<Location>, Cloneable {
         return retVal;
     }
 
+    @Override
+    public String toString() {
+        String retVal = this.contigId + String.valueOf(this.getDir());
+        for (Region region : this.regions) {
+            retVal += region;
+        }
+        return retVal;
+    }
+
     /**
      * @return TRUE if this location is valid
      */
     public boolean isValid() {
         return this.valid;
+    }
+
+    /**
+     * @return TRUE if this location wholly contains another location.
+     *
+     * @param other	other location to check
+     */
+    public Boolean contains(Location other) {
+        return (this.getContigId() == other.getContigId() &&
+                this.getLeft() <= other.getLeft() && this.getRight() >= other.getRight());
     }
 
     /**
@@ -309,6 +340,33 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     private Region lastRegion() {
         int i = this.regions.size() - 1;
         return this.regions.get(i);
+    }
+
+    /**
+     * Modify this location to have a single region with the specified limits.
+     *
+     * @param left	new left position of this location
+     * @param right	new right position of this location
+     */
+    public void setRegion(int left, int right) {
+        while (this.regions.size() > 1) this.regions.remove(1);
+        Region first = this.regions.get(0);
+        first.setLeft(left);
+        first.setRight(right);
+    }
+
+    /**
+     * This nested class provides a comparator that is based solely on left position.
+     */
+    public static class Sorter implements Comparator<Location> {
+
+        public Sorter() { }
+
+        @Override
+        public int compare(Location o1, Location o2) {
+            return o1.getLeft() - o2.getLeft();
+        }
+
     }
 
 }
