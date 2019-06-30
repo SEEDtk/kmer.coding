@@ -7,6 +7,7 @@ import junit.framework.TestSuite;
 import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
@@ -29,10 +30,15 @@ public class AppTest
      * Create the test case
      *
      * @param testName name of the test case
+     * @throws JsonException
+     * @throws FileNotFoundException
+     * @throws NumberFormatException
      */
-    public AppTest( String testName )
+    public AppTest( String testName ) throws NumberFormatException, FileNotFoundException, JsonException
     {
         super( testName );
+        // Load the test genome.
+        this.myGto = new Genome("gto_test/1313.7001.gto");
     }
 
     /**
@@ -43,29 +49,31 @@ public class AppTest
         return new TestSuite( AppTest.class );
     }
 
+    private Genome myGto = null;
+
+
     private static final String myProtein = "MNERYQCLKTKEYQALLSSKGRQIFAKRKIDMKSVFGQIKVCLGYKRCHLRGKRQVRIDMGFILMANNLLKYNKRKRQN";
     private static final String myDna1 = "atgaatgaacgttaccagtgtttaaaaactaaagaatatcaggcacttttatcttccaagggtagacaaattttcgctaaacgtaagattgatatgaaatctgtctttgggcagataaaggtttgtttgggttataagagatgtcatctgagaggtaagcgtcaagtgagaattgacatgggattcatactcatggccaacaacctgctgaaatataataagagaaagaggcaaaattaa";
     private static final String myDna2 = "aaatagatttcaaaatgataaaaacgcatcctatcaggtttgagtgaacttgataggatgcgttttagaatgtcaaaattaattgagtttg";
+
 
     /**
      * Main test of genomes.
      * @throws FileNotFoundException
      * @throws JsonException
      */
-    public void testGenome() throws FileNotFoundException, JsonException
+    public void testGenome()
     {
-
-        Genome myGto = new Genome("gto_test/1313.7001.gto");
-        assertEquals("Genome ID not correct.", "1313.7001", myGto.getId());
-        assertEquals("Genome name not correct.", "Streptococcus pneumoniae P210774-233", myGto.getName());
-        assertNull("Nonexistent feature found.", myGto.getFeature("fig|1313.7001.cds.75"));
+        assertEquals("Genome ID not correct.", "1313.7001", this.myGto.getId());
+        assertEquals("Genome name not correct.", "Streptococcus pneumoniae P210774-233", this.myGto.getName());
+        assertNull("Nonexistent feature found.", this.myGto.getFeature("fig|1313.7001.cds.75"));
         // Now we need to pull out a PEG and ask about it.
-        Feature myFeature = myGto.getFeature("fig|1313.7001.peg.758");
+        Feature myFeature = this.myGto.getFeature("fig|1313.7001.peg.758");
         assertNotNull("Sample feature not found.", myFeature);
         assertEquals("Incorrect feature found.", "fig|1313.7001.peg.758", myFeature.getId());
         assertEquals("Incorrect function in sample feature.", "Transposase, IS4 family", myFeature.getFunction());
         assertEquals("Incorrect protein for sample feature.", myProtein, myFeature.getProteinTranslation());
-        assertEquals("Incorrect DNA for sample feature.", myDna1, myGto.getDna("fig|1313.7001.peg.758"));
+        assertEquals("Incorrect DNA for sample feature.", myDna1, this.myGto.getDna("fig|1313.7001.peg.758"));
         // Next the location.
         Location myLoc = myFeature.getLocation();
         assertEquals("Incorrect contig for feature.", "1313.7001.con.0017", myLoc.getContigId());
@@ -76,8 +84,8 @@ public class AppTest
         assertEquals("Incorrect strand for feature.", '-', myLoc.getDir());
         assertFalse("Segmentation flag failure.", myLoc.isSegmented());
         // Now we check a segmented location.
-        myFeature = myGto.getFeature("fig|1313.7001.repeat_unit.238");
-        assertEquals("Incorrect DNA for segmented feature.", myDna2, myGto.getDna(myFeature.getId()));
+        myFeature = this.myGto.getFeature("fig|1313.7001.repeat_unit.238");
+        assertEquals("Incorrect DNA for segmented feature.", myDna2, this.myGto.getDna(myFeature.getId()));
         myLoc = myFeature.getLocation();
         assertEquals("Incorrect contig for segmented location.", "1313.7001.con.0018", myLoc.getContigId());
         assertEquals("Incorrect left for segmented location.", 11908, myLoc.getLeft());
@@ -87,7 +95,7 @@ public class AppTest
         assertEquals("Incorrect strand for segmented location.", '+', myLoc.getDir());
         assertTrue("Segmentation flag failure.", myLoc.isSegmented());
         // Now iterate over the proteins.
-        for (Feature feat : myGto.getPegs()) {
+        for (Feature feat : this.myGto.getPegs()) {
             assertEquals("Feature" + feat.getId() + " is not a PEG.", "CDS", feat.getType());
         }
     }
@@ -300,8 +308,11 @@ public class AppTest
                           };
         // Add all these locations to the list.
         for (Location loc : locs) {
-            newList.addLocation(loc);
+            assertTrue("Failed to add " + loc + " to list.", newList.addLocation(loc));
         }
+        Location badLoc = Location.create("yourContig", "+", 1000, 4999);
+        assertFalse("Added wrong contig successfully.", newList.addLocation(badLoc));
+        assertEquals("Invalid contig ID in location list.", "myContig", newList.getContigId());
         // Now we need to verify that none of the stored locations overlap.
         Iterator<Location> iter = newList.iterator();
         Location prev = iter.next();
@@ -348,4 +359,82 @@ public class AppTest
             }
         }
     }
+
+    /**
+     * Basic test for location-list maps.
+     */
+    public void testContigMapping() {
+        Map<String, LocationList> gList = LocationList.createGenomeCodingMap(this.myGto);
+        LocationList contig0036 = gList.get("1313.7001.con.0036");
+        assertNotNull("Contig 0036 not found.", contig0036);
+        assertEquals("Incorrect strand found for test position 33996.", '+', contig0036.computeStrand(33996));
+        assertEquals("Incorrect strand found for test position 30980.", '-', contig0036.computeStrand(30980));
+        assertEquals("Incorrect strand found for test position 30984.", '0', contig0036.computeStrand(30984));
+    }
+
+    /**
+     * Basic test for kmer frames.
+     */
+    public void testKmerFrames() {
+        KmerFrameCounts myCounts = new KmerFrameCounts();
+        // Verify that an uncounted kmer's best frame is invalid.
+        assertEquals("Valid frame returned for empty kmer.", Frame.XX, myCounts.getBest());
+        assertEquals("Nonzero fraction returned for empty kmer.", 0.0, myCounts.getFrac(Frame.F0));
+        // Test iterating the counts.
+        for (Frame frm : Frame.all) {
+            myCounts.increment(frm);
+        }
+        // Put some counts in.
+        for (int i = 1; i <= 39; i++) {
+            myCounts.increment(Frame.M3);
+        }
+        for (int i = 1; i <= 59; i++) {
+            myCounts.increment(Frame.M2);
+        }
+        for (int i = 1; i <= 99; i++) {
+            myCounts.increment(Frame.M1);
+        }
+        for (int i = 1; i <= 199; i++) {
+            myCounts.increment(Frame.F0);
+        }
+        for (int i = 1; i <= 499; i++) {
+            myCounts.increment(Frame.P1);
+        }
+        for (int i = 1; i <= 19; i++) {
+            myCounts.increment(Frame.P2);
+        }
+        for (int i = 1; i <= 79; i++) {
+            myCounts.increment(Frame.P3);
+        }
+        // Verify that the invalid frame doesn't crash us.
+        myCounts.increment(Frame.XX);
+        assertEquals("Invalid frame has nonzero count.", 0, myCounts.getCount(Frame.XX));
+        // Verify the above counts.
+        assertEquals("Count error in frame M3.", 40, myCounts.getCount(Frame.M3));
+        assertEquals("Count error in frame M2.", 60, myCounts.getCount(Frame.M2));
+        assertEquals("Count error in frame M1.", 100, myCounts.getCount(Frame.M1));
+        assertEquals("Count error in frame F0.", 200, myCounts.getCount(Frame.F0));
+        assertEquals("Count error in frame P1.", 500, myCounts.getCount(Frame.P1));
+        assertEquals("Count error in frame P2.", 20, myCounts.getCount(Frame.P2));
+        assertEquals("Count error in frame P3.", 80, myCounts.getCount(Frame.P3));
+        // Verify the fractions.
+        assertEquals("Frac error in frame M3.", 0.040, myCounts.getFrac(Frame.M3));
+        assertEquals("Frac error in frame M2.", 0.060, myCounts.getFrac(Frame.M2));
+        assertEquals("Frac error in frame M1.", 0.100, myCounts.getFrac(Frame.M1));
+        assertEquals("Frac error in frame F0.", 0.200, myCounts.getFrac(Frame.F0));
+        assertEquals("Frac error in frame P1.", 0.500, myCounts.getFrac(Frame.P1));
+        assertEquals("Frac error in frame P2.", 0.020, myCounts.getFrac(Frame.P2));
+        assertEquals("Frac error in frame P3.", 0.080, myCounts.getFrac(Frame.P3));
+        // Verify the best frame.
+        assertSame("Incorrect best frame.", Frame.P1, myCounts.getBest());
+        // Check overflow.
+        for (int i = 1; i <= 40000; i++) {
+            myCounts.increment(Frame.P1);
+        }
+        assertEquals("Overflow occurred above 32K.", 40500, myCounts.getCount(Frame.P1));
+        assertEquals("Invalid fraction at overflow point.", 0.988, myCounts.getFrac(Frame.P1), 0.001);
+        assertEquals("Invalid frame choice at overflow point.", Frame.P1, myCounts.getBest());
+    }
 }
+
+

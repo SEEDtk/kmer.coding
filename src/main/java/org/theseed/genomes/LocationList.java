@@ -3,7 +3,10 @@
  */
 package org.theseed.genomes;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeSet;
 
 /**
@@ -174,4 +177,40 @@ public class LocationList implements Iterable<Location> {
         return this.locations.iterator();
     }
 
+    /**
+     * @return the contig ID for this location list
+     */
+    public String getContigId() {
+        return this.contigId;
+    }
+
+    /**
+     * Create a hashmap of LocationLists for all the contigs in a genome.
+     *
+     * @param genome	a genome object whose protein coding regions are to be encoded in location lists
+     *
+     * @return a collection of location lists, one per contig, with the coding regions defined
+     */
+    public static Map<String, LocationList> createGenomeCodingMap(Genome genome) {
+        Collection<Contig> contigs = genome.getContigs();
+        Map<String, LocationList> retVal = new HashMap<String, LocationList>();
+        // Initialize the contig lists.
+        for (Contig contig : contigs) {
+            LocationList newList = new LocationList(contig.getId());
+            retVal.put(contig.getId(), newList);
+        }
+        // Now run through the CDS features, adding them to the location lists.
+        Collection<Feature> pegs = genome.getPegs();
+        for (Feature feat : pegs) {
+            Location loc = feat.getLocation();
+            if (feat != null) {
+                String contigId = loc.getContigId();
+                LocationList contigList = retVal.get(contigId);
+                if (contigList != null) {
+                    contigList.addLocation(loc);
+                }
+            }
+        }
+        return retVal;
+    }
 }

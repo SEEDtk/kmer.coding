@@ -10,7 +10,10 @@ public enum Frame {
     M3("-3"), M2("-2"), M1("-1"), F0("0"), P1("+1"), P2("+2"), P3("+3"), XX("X");
 
     /** basic array of all frames */
-    private static final Frame values[] = values();
+    private static final Frame[] values = values();
+
+    /** array of all good frames */
+    public static final Frame[] all = new Frame[] { M3, M2, M1, F0, P1, P2, P3 };
 
     /** array size for an array of frame data */
     public static final int nFrames = 7;
