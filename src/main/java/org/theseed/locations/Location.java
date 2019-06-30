@@ -216,17 +216,16 @@ public abstract class Location implements Comparable<Location>, Cloneable {
     }
 
     /**
-     * Compute the frame of a kmer relative to this location.  The kmer is assumed to b on the
+     * Compute the frame of a region relative to this location.  The region is assumed to be on the
      * forward strand.
      *
-     * @param pos	position (1-based) on the contig of the start of the kmer
-     * @param kSize	length of the kmer
-     * @return	the relevant frame position, or INVALID if the location is invalid or the kmer is not
-     * 			wholly inside a region
+     * @param pos	position (1-based) on the contig of the start of the region
+     * @param end	position (1-based) on the contig of the end of the region
+     * @return	the relevant frame position, or XX if the location is invalid or the region is not
+     * 			wholly inside a segment of this location
      */
-    public Frame kmerFrame(int pos, int kSize) {
+    public Frame regionFrame(int pos, int end) {
         Frame retVal = Frame.XX;
-        int end = pos + kSize - 1;
         if (end < this.getLeft() || pos > this.getRight()) {
             // Here we are outside the location entirely.
             retVal = Frame.F0;

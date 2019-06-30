@@ -110,7 +110,6 @@ public class AppTest
     public void testKmers() {
         // Insure the kmer size is 15.
         DnaKmer.setSize(15);
-
         DnaKmer kmer1 = new DnaKmer(mySequence, 10);
         assertTrue("Kmer index should be positive.", kmer1.idx() >= 0);
         assertEquals("Kmer index did not recurse.", mySequence.substring(9, 24), kmer1.toString());
@@ -131,6 +130,16 @@ public class AppTest
                     mySequence.substring(pos-1, pos+9), kmer);
         }
         assertEquals("Iterator ended too soon.", mySequence.length() - 8, iterator.getPos());
+        // Test kmer comparison.
+        DnaKmer kmerA = new DnaKmer("actccagcaagcatc");
+        DnaKmer kmerB = new DnaKmer("actccagcaagcatc");
+        DnaKmer kmerC = new DnaKmer("gatgcttgctggagt");
+        assertTrue("Equal returns FALSE for same kmers.", kmerA.equals(kmerB));
+        assertTrue("Equal not commutative for same kmers.", kmerB.equals(kmerA));
+        assertFalse("Equal returns TRUE for revcmp kmers.", kmerA.equals(kmerC));
+        assertEquals("Compare returns nonzero for same kmers.", 0, kmerA.compareTo(kmerB));
+        assertFalse("Compare returns zero for revcmp kmers.", kmerA.compareTo(kmerC) == 0);
+        assertEquals("Comparison not an ordering.", kmerA.compareTo(kmerC), -kmerC.compareTo(kmerA));
     }
 
     /**
@@ -153,7 +162,7 @@ public class AppTest
               Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0
             };
         for (int pos = 1; pos < 60; pos++) {
-            Frame computed = myLoc.kmerFrame(pos, DnaKmer.getSize());
+            Frame computed = myLoc.regionFrame(pos, pos + DnaKmer.getSize() - 1);
             assertEquals("Incorrect frame result (plus strand " + pos + ").", results[pos], computed);
         }
         myLoc = Location.create("mySequence", "-");
@@ -168,7 +177,7 @@ public class AppTest
                   Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0
                 };
         for (int pos = 1; pos < 60; pos++) {
-            Frame computed = myLoc.kmerFrame(pos, DnaKmer.getSize());
+            Frame computed = myLoc.regionFrame(pos, pos + DnaKmer.getSize() - 1);
             assertEquals("Incorrect frame result (minus strand " + pos + ").", results[pos], computed);
         }
 
@@ -358,6 +367,14 @@ public class AppTest
                         newList.computeStrand(pos) != '0');
             }
         }
+        // Finally, we want to test the frame computation.
+        assertEquals("Invalid frame for pre-loc position.", Frame.XX, newList.computeRegionFrame(1, 15));
+        assertEquals("Invalid frame for segmented position.", Frame.XX, newList.computeRegionFrame(40, 45));
+        assertEquals("Invalid frame for simple minus position.", Frame.M1, newList.computeRegionFrame(390, 399));
+        assertEquals("Invalid frame for simple plus position.", Frame.P3, newList.computeRegionFrame(4009, 4054));
+        assertEquals("Invalid frame for near-overlap position.", Frame.P2, newList.computeRegionFrame(5235, 5245));
+        assertEquals("Invalid frame for overlap position.", Frame.XX, newList.computeRegionFrame(5235, 5255));
+        assertEquals("Invalid frame for extron position.", Frame.F0, newList.computeRegionFrame(7306, 7316));
     }
 
     /**
@@ -444,10 +461,15 @@ public class AppTest
         for (DnaKmer kmer : bigCounter) {
             assertEquals("Incorrect kmer found.", kmer, myKmer);
         }
-        // Now add in a genome.  There really is no practical way to check this, but we need
-        // no know it won't crash on us.
+        // Erase the counter and add in a genome.
+        bigCounter.clear();
         bigCounter.processGenome(this.myGto);
+        // Checking the genome is hard.  We are going to check for "tgaatgaac"
+        // in frame M1. We know this is in the M1 frame for one protein.
+        DnaKmer targetKmer = new DnaKmer("tgaatgaac");
+        assertTrue("Target kmer not in known frame.", bigCounter.getCount(targetKmer, Frame.M1) > 0);
     }
+
 }
 
 

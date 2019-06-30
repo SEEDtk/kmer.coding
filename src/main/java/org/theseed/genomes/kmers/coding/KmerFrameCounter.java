@@ -5,11 +5,15 @@ package org.theseed.genomes.kmers.coding;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.theseed.genomes.Contig;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.kmers.DnaKmer;
+import org.theseed.genomes.kmers.SequenceDnaKmers;
 import org.theseed.locations.Frame;
+import org.theseed.locations.LocationList;
 
 /**
  * @author Bruce Parrello
@@ -35,9 +39,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
     public KmerFrameCounter() {
         this.size = DnaKmer.maxKmers();
         this.countArray = new short[7][this.size];
-        for (int i = 0; i < 7; i++) {
-            Arrays.fill(this.countArray[i], (short) 0);
-        }
+        this.clear();
     }
 
     /**
@@ -120,7 +122,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         }
         return retVal;
     }
-    
+
 
     /**
      * Iterator class for finding kmers with nonzero counts.
@@ -171,12 +173,39 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
 
     /**
      * Count all of the kmers in a specified genome.
-     * 
+     *
      * @param genome	the genome whose kmers are to be counted
      */
-	public void processGenome(Genome genome) {
-		// TODO create the sequence map
-		
-	}
+    public void processGenome(Genome genome) {
+        // This will hold the kmer inverse.
+        DnaKmer invKmer = new DnaKmer();
+        // Get the map of location lists.
+        Map<String, LocationList> contigMap = LocationList.createGenomeCodingMap(genome);
+        // Loop through the contigs from the genome.
+        for (Contig contig : genome.getContigs()) {
+            // Get the location list for this contig.
+            LocationList contigLocs = contigMap.get(contig.getId());
+            SequenceDnaKmers kmerProcessor = new SequenceDnaKmers(contig.getSequence());
+            while (kmerProcessor.nextKmer()) {
+                int pos = kmerProcessor.getPos();
+                Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
+                if (kmerFrame != Frame.XX) {
+                    this.increment(kmerProcessor, kmerFrame);
+                    invKmer.setRev(kmerProcessor);
+                    this.increment(invKmer, kmerFrame.rev());
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Erase all the counts so we can start over.
+     */
+    public void clear() {
+        for (int i = 0; i < 7; i++) {
+            Arrays.fill(this.countArray[i], (short) 0);
+        }
+    }
 
 }

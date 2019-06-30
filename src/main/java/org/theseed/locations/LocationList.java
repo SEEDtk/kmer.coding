@@ -217,4 +217,26 @@ public class LocationList implements Iterable<Location> {
         }
         return retVal;
     }
+
+    /**
+     * @return the frame for a specified kmer location
+     *
+     * This method must find the location containing the start position of the kmer and then
+     * compute the frame relative to that location.
+     *
+     * @param pos	start position of the kmer
+     * @param end	end position of the kmer
+     */
+    public Frame computeRegionFrame(int pos, int end) {
+        Frame retVal = Frame.XX;
+        // Set the search location to the kmer limits.
+        this.searchLoc.setRegion(pos, end);
+        // Find the rightmost location that can include the search location.
+        Location loc = this.locations.floor(this.searchLoc);
+        if (loc != null) {
+            // Use it to compute the frame.
+            retVal = loc.regionFrame(pos, end);
+        }
+        return retVal;
+    }
 }

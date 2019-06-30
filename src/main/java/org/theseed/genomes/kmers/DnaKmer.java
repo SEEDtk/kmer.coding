@@ -231,5 +231,21 @@ public class DnaKmer implements Comparable<DnaKmer> {
         return (this.kIdx == ((DnaKmer) arg0).kIdx);
     }
 
+    /**
+     * @return TRUE if this kmer is the other kmer's reverse complement.
+     */
+    public boolean isRev(DnaKmer other) {
+        return (this.kIdx == other.rIdx());
+    }
+
+    /**
+     * Set this kmer to the reverse compliment of the specified other kmer.
+     *
+     * @param kmer	other kmer whose reverse compliment is needed
+     */
+    public void setRev(SequenceDnaKmers kmer) {
+        this.kIdx = kmer.rIdx();
+    }
+
 
 }
