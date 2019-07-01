@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -13,6 +14,7 @@ import com.github.cliftonlabs.json_simple.JsonException;
 
 import org.theseed.genomes.Feature;
 import org.theseed.genomes.Genome;
+import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
 import org.theseed.locations.Frame;
@@ -392,8 +394,10 @@ public class AppTest
 
     /**
      * The test for the insanely big kmer counter.
+     * @throws IOException
+     * @throws ClassNotFoundException
      */
-    public void testKmerCounter() {
+    public void testKmerCounter() throws IOException, ClassNotFoundException {
         // Use small kmers to fit in debugger.
         DnaKmer.setSize(9);
         KmerFrameCounter bigCounter = new KmerFrameCounter();
@@ -468,6 +472,39 @@ public class AppTest
         // in frame M1. We know this is in the M1 frame for one protein.
         DnaKmer targetKmer = new DnaKmer("tgaatgaac");
         assertTrue("Target kmer not in known frame.", bigCounter.getCount(targetKmer, Frame.M1) > 0);
+        // Now we need to very serialization.  Write out the kmer counter.
+        bigCounter.save("kmerTest.ser");
+        // Save some key values.  We can't save them all, due to memory issues.
+        int saveMyP3 = bigCounter.getCount(myKmer, Frame.P3);
+        int saveMyM1 = bigCounter.getCount(myKmer, Frame.M1);
+        int saveTargetP2 = bigCounter.getCount(targetKmer, Frame.P2);
+        int saveTargetF0 = bigCounter.getCount(targetKmer, Frame.F0);
+        // Erase the old kmer counter.
+        bigCounter = null;
+        // Read in the saved one.
+        bigCounter = KmerFrameCounter.load("kmerTest.ser");
+        // Test the saved values.
+        assertEquals("Error in saveMyP3.", saveMyP3, bigCounter.getCount(myKmer, Frame.P3));
+        assertEquals("Error in saveMyM1.", saveMyM1, bigCounter.getCount(myKmer, Frame.M1));
+        assertEquals("Error in saveTargetP2.", saveTargetP2, bigCounter.getCount(targetKmer, Frame.P2));
+        assertEquals("Error in saveTargetF0.", saveTargetF0, bigCounter.getCount(targetKmer, Frame.F0));
+    }
+
+    /**
+     * Test genome directories
+     *
+     * @throws IOException
+     */
+    public void testGenomeDir() throws IOException {
+        GenomeDirectory gDir = new GenomeDirectory("gto_test");
+        assertEquals("Wrong number of genomes found.", 4, gDir.size());
+        // Run through an iterator.  We know the genome IDs, we just need to find them in order.
+        String[] expected = new String[] { "1005394.4", "1313.7001", "1313.7002", "1313.7016" };
+        int i = 0;
+        for (Genome genome : gDir) {
+            assertEquals("Incorrect result for genome at position " + i + ".", expected[i], genome.getId());
+            i++;
+        }
     }
 
 }

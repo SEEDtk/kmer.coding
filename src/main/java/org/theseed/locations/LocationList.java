@@ -14,7 +14,6 @@ import org.theseed.genomes.Feature;
 import org.theseed.genomes.Genome;
 
 /**
- * @author Bruce Parrello
  *
  * This object maintains a sorted list of non-overlapping locations on a contig.  The
  * locations are inserted by adding features from a genome.  If the feature is on a
@@ -28,6 +27,7 @@ import org.theseed.genomes.Genome;
  * contig.  They never overlap.  They are all single-segment.  These assumptions simplify the
  * operations on this object.
  *
+ * @author Bruce Parrello
  */
 public class LocationList implements Iterable<Location> {
 

@@ -19,13 +19,13 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
 /**
- * @author Bruce Parrello
- *
  * GenomeTypeObject for Java
  *
  * This class implements a genome loaded from a GTO.  The entire genome resides in memory, so it is
  * recommended that only a few of these are read in at a time.  At the current time, only a limited
  * number of fields are implemented.  This will change if more are needed.
+ *
+ * @author Bruce Parrello
  *
  */
 public class Genome  {

@@ -1,13 +1,22 @@
 package org.theseed.genomes.kmers.coding;
 
 /**
- * Hello world!
  *
+ * Process GTOs in a directory and count their kmers.
+ *
+ * @author Bruce Parrello
  */
-public class App 
+public class App
 {
+
+
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
+        GenomeDirFrameCounter runObject = new GenomeDirFrameCounter();
+        boolean ok = runObject.parseCommand(args);
+        if (ok) {
+            runObject.run();
+        }
+
     }
 }

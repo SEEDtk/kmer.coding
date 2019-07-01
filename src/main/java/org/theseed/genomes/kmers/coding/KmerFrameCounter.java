@@ -3,6 +3,12 @@
  */
 package org.theseed.genomes.kmers.coding;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,15 +22,18 @@ import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
 
 /**
- * @author Bruce Parrello
  *
  * This class manages the frame counts for all the kmers.  It is a set of giant arrays, one per
  * frame, each array indexed by DnaKmer numbers.  To save space, the arrays contain short
  * integers, but these are treated as unsigned via some fancy numeric dancing.  All the
  * counts are returned as full integers.
  *
+ * @author Bruce Parrello
  */
-public class KmerFrameCounter implements Iterable<DnaKmer> {
+public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
+
+    // unique ID for serialization
+    private static final long serialVersionUID = 8046566020973057699L;
 
     // FIELDS
     /** the master array, indexed by frame ordinal and then kmer index */
@@ -206,6 +215,38 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         for (int i = 0; i < 7; i++) {
             Arrays.fill(this.countArray[i], (short) 0);
         }
+    }
+
+    /**
+     * Save this object to a file.
+     *
+     * @param fileName	name of the output file
+     * @throws IOException
+     */
+    public void save(String fileName) throws IOException {
+        FileOutputStream outFile = new FileOutputStream(fileName);
+        ObjectOutputStream outStream = new ObjectOutputStream(outFile);
+        outStream.writeObject(this);
+        outStream.close();
+        outFile.close();
+    }
+
+    /**
+     * Load a kmer counter from a file
+     *
+     * @param fileName	name of the input file
+     *
+     * @return the kmer counter object serialized to the file
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static KmerFrameCounter load(String fileName) throws IOException, ClassNotFoundException {
+        FileInputStream inFile = new FileInputStream(fileName);
+        ObjectInputStream inStream = new ObjectInputStream(inFile);
+        KmerFrameCounter retVal = (KmerFrameCounter) inStream.readObject();
+        inStream.close();
+        inFile.close();
+        return retVal;
     }
 
 }
