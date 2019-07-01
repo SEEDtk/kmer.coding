@@ -6,6 +6,7 @@ import junit.framework.TestSuite;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -453,7 +454,14 @@ public class AppTest
         assertEquals("Frac error in frame P2.", 0.020, bigCounter.getFrac(myKmer, Frame.P2));
         assertEquals("Frac error in frame P3.", 0.080, bigCounter.getFrac(myKmer, Frame.P3));
         // Verify the best frame.
-        assertSame("Incorrect best frame.", Frame.P1, bigCounter.getBest(myKmer));
+        Frame bestFrame = bigCounter.getBest(myKmer);
+        assertSame("Incorrect best frame.", Frame.P1, bestFrame);
+        double frac = bigCounter.getFrac(myKmer, bestFrame);
+        int hits = bigCounter.getCount(myKmer, bestFrame);
+        // Test printing the best frame.
+        PrintWriter kmerWriter = new PrintWriter("testOut.txt");
+        kmerWriter.printf("%s\t%s\t%04.2f\t%d\n", myKmer, bestFrame, frac, hits);
+        kmerWriter.close();
         // Check overflow.
         for (int i = 1; i <= 40000; i++) {
             bigCounter.increment(myKmer, Frame.P1);

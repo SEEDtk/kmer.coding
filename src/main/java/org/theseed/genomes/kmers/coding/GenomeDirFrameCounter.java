@@ -5,13 +5,16 @@ package org.theseed.genomes.kmers.coding;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
+import org.theseed.locations.Frame;
 
 /**
  *
@@ -39,10 +42,18 @@ public class GenomeDirFrameCounter {
     private boolean help;
 
     /** kmer size to use (default 15) */
-    @Option(name="-K", aliases= {"--kmer"}, metaVar="15", usage="kmer size")
+    @Option(name="-K", aliases={"--kmer"}, metaVar="15", usage="kmer size")
     private void setKmer(int newSize) {
         DnaKmer.setSize(newSize);
     }
+
+    /** minimum fraction for a kmer to be useful */
+    @Option(name="-t", aliases={"--threshold"}, metaVar="0.8", usage="best-percent threshold for a useful kmer")
+    private double threshold;
+
+    /** minimum hits to the best frame for a kmer to be useful */
+    @Option(name="-m", aliases= {"--minHits"}, metaVar="0", usage="minimum hits in the best frame for a useful kmer")
+    private int minHits;
 
     /** input directory name */
     @Argument(index=0, metaVar="inputDir", usage="input GTO directory",
@@ -63,6 +74,9 @@ public class GenomeDirFrameCounter {
      */
     public boolean parseCommand(String[] args) {
         boolean retVal = false;
+        // Set the defaults.
+        this.threshold = 0.80;
+        this.minHits = 0;
         CmdLineParser parser = new CmdLineParser(this);
         try {
             parser.parseArgument(args);
@@ -93,9 +107,37 @@ public class GenomeDirFrameCounter {
         System.err.println("Input directory is " + this.inputGenomes + ".");
         System.err.println("Output directory is " + this.outDir + ".");
         System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
-        // TODO Create the kmer counter.
-        // TODO loop through the genomes, counting kmers
-        // TODO output significant kmers
+        // Create the kmer counter.
+        KmerFrameCounter bigCounter = new KmerFrameCounter();
+        // Process the genomes.
+        int gCount = 0;
+        for (Genome genome : this.inputGenomes) {
+            gCount++;
+            System.err.println("Processing #" + gCount + ": " + genome + ".");
+            bigCounter.processGenome(genome);
+        }
+        try {
+            System.err.println("Saving results.");
+            File outFile = new File(this.outDir, "kmers.ser");
+            bigCounter.save(outFile);
+            System.err.println("Searching for useful kmers.");
+            // Open the kmer output file.
+            File kmerFile = new File(this.outDir, "kmers.tbl");
+            PrintWriter kmerWriter = new PrintWriter(kmerFile);
+            int kCount = 0;
+            for (DnaKmer kmer : bigCounter) {
+                Frame bestFrame = bigCounter.getBest(kmer);
+                double frac = bigCounter.getFrac(kmer, bestFrame);
+                int hits = bigCounter.getCount(kmer, bestFrame);
+                if (frac > this.threshold && hits > this.minHits) {
+                    // Here the kmer is good enough.
+                    kmerWriter.printf("%s\t%s\t%04.2f\t%d\n", kmer, bestFrame, frac, hits);
+                }
+            }
+            kmerWriter.close();
+            System.err.println(kCount + " good kmers found.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
 }

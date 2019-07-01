@@ -3,6 +3,7 @@
  */
 package org.theseed.genomes.kmers.coding;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -232,7 +233,20 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
     }
 
     /**
-     * Load a kmer counter from a file
+     * Load a kmer counter object from a file
+     *
+     * @param fileName	path and name of the input file
+     *
+     * @return the kmer counter object serialized to the file
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static KmerFrameCounter load(File fileName) throws IOException, ClassNotFoundException {
+        return KmerFrameCounter.load(fileName.getPath());
+    }
+
+    /**
+     * Load a kmer counter object from a file
      *
      * @param fileName	name of the input file
      *
@@ -247,6 +261,16 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
         inStream.close();
         inFile.close();
         return retVal;
+    }
+
+    /**
+     * Save this object to a file.
+     *
+     * @param outFile	path and name of the output file
+     * @throws IOException
+     */
+    public void save(File outFile) throws IOException {
+        this.save(outFile.getPath());
     }
 
 }

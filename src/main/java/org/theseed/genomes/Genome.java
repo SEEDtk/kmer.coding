@@ -216,5 +216,10 @@ public class Genome  {
         return this.contigs.get(contigId);
     }
 
+    @Override
+    public String toString() {
+        return this.id + " (" + this.name + ")";
+    }
+
 
 }
