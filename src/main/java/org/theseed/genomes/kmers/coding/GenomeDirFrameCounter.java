@@ -111,10 +111,17 @@ public class GenomeDirFrameCounter {
         KmerFrameCounter bigCounter = new KmerFrameCounter();
         // Process the genomes.
         int gCount = 0;
+        long start = System.currentTimeMillis();
         for (Genome genome : this.inputGenomes) {
             gCount++;
             System.err.println("Processing #" + gCount + ": " + genome + ".");
             bigCounter.processGenome(genome);
+            if (gCount % 100 == 0) {
+                double secsPerGenome = (System.currentTimeMillis() - start) / (1000 * gCount);
+                double remainingMinutes = (this.inputGenomes.size() - gCount) * secsPerGenome / 60;
+                System.err.printf("TIME ESTIMATE: %4.2f seconds/genome, %4.1f minutes left.\n",
+                        secsPerGenome, remainingMinutes);
+            }
         }
         try {
             System.err.println("Saving results.");
