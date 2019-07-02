@@ -7,25 +7,25 @@ package org.theseed.locations;
  *
  */
 public enum Frame {
-    M3("-3"), M2("-2"), M1("-1"), F0("0"), P1("+1"), P2("+2"), P3("+3"), XX("X");
+    M0("-3"), M2("-2"), M1("-1"), F0("0"), P1("+1"), P2("+2"), P0("+3"), XX("X");
 
     /** basic array of all frames */
     private static final Frame[] values = values();
 
     /** array of all good frames */
-    public static final Frame[] all = new Frame[] { M3, M2, M1, F0, P1, P2, P3 };
+    public static final Frame[] all = new Frame[] { M0, M2, M1, F0, P1, P2, P0 };
 
     /** array size for an array of frame data */
     public static final int nFrames = 7;
 
     /** reverse complement map */
-    private static final Frame[] reverse = new Frame[] { P3, P1, P2, F0, M2, M1, M3 };
+    private static final Frame[] reverse = new Frame[] { P0, P1, P2, F0, M2, M1, M0 };
 
     /** modular conversion table for plus strand */
-    public static final Frame[] plusFrames = new Frame[] { P3, P1, P2 };
+    public static final Frame[] plusFrames = new Frame[] { P0, P1, P2 };
 
     /** modular conversion table for minus strand */
-    public static final Frame[] minusFrames = new Frame[] { M3, M1, M2 };
+    public static final Frame[] minusFrames = new Frame[] { M0, M1, M2 };
 
     /** label of frame */
     String label;

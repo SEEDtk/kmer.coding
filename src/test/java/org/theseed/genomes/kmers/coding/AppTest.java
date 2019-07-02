@@ -150,10 +150,10 @@ public class AppTest
      */
     public void testFrames() {
         // Verify frame transformations.
-        assertEquals("P3 did not reverse.", Frame.M3, Frame.P3.rev());
+        assertEquals("P3 did not reverse.", Frame.M0, Frame.P0.rev());
         assertEquals("P2 did not reverse.", Frame.M1, Frame.P2.rev());
         assertEquals("P1 did not reverse.", Frame.M2, Frame.P1.rev());
-        assertEquals("M3 did not reverse.", Frame.P3, Frame.M3.rev());
+        assertEquals("M3 did not reverse.", Frame.P0, Frame.M0.rev());
         assertEquals("M2 did not reverse.", Frame.P1, Frame.M2.rev());
         assertEquals("M1 did not reverse.", Frame.P2, Frame.M1.rev());
         assertEquals("F0 did not reverse.", Frame.F0, Frame.F0.rev());
@@ -166,9 +166,9 @@ public class AppTest
         // Here are our expected results. Note there is no result for position 0.  We will start at 1.
         Frame[] results = new Frame[]
             { Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
-              Frame.P3, Frame.P1, Frame.P2, Frame.P3, Frame.P1, Frame.P2, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
+              Frame.P0, Frame.P1, Frame.P2, Frame.P0, Frame.P1, Frame.P2, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
               Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
-              Frame.P3, Frame.P1, Frame.P2, Frame.P3, Frame.P1, Frame.P2, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
+              Frame.P0, Frame.P1, Frame.P2, Frame.P0, Frame.P1, Frame.P2, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
               Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
               Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0
             };
@@ -181,9 +181,9 @@ public class AppTest
         myLoc.addRegion(49, 20);
         results = new Frame[]
                 { Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
-                  Frame.M2, Frame.M1, Frame.M3, Frame.M2, Frame.M1, Frame.M3, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
+                  Frame.M2, Frame.M1, Frame.M0, Frame.M2, Frame.M1, Frame.M0, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
                   Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
-                  Frame.M2, Frame.M1, Frame.M3, Frame.M2, Frame.M1, Frame.M3, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
+                  Frame.M2, Frame.M1, Frame.M0, Frame.M2, Frame.M1, Frame.M0, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
                   Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX, Frame.XX,
                   Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0, Frame.F0
                 };
@@ -382,7 +382,7 @@ public class AppTest
         assertEquals("Invalid frame for pre-loc position.", Frame.XX, newList.computeRegionFrame(1, 15));
         assertEquals("Invalid frame for segmented position.", Frame.XX, newList.computeRegionFrame(40, 45));
         assertEquals("Invalid frame for simple minus position.", Frame.M1, newList.computeRegionFrame(390, 399));
-        assertEquals("Invalid frame for simple plus position.", Frame.P3, newList.computeRegionFrame(4009, 4054));
+        assertEquals("Invalid frame for simple plus position.", Frame.P0, newList.computeRegionFrame(4009, 4054));
         assertEquals("Invalid frame for near-overlap position.", Frame.P2, newList.computeRegionFrame(5235, 5245));
         assertEquals("Invalid frame for overlap position.", Frame.XX, newList.computeRegionFrame(5235, 5255));
         assertEquals("Invalid frame for extron position.", Frame.F0, newList.computeRegionFrame(7306, 7316));
@@ -422,7 +422,7 @@ public class AppTest
         }
         // Put some counts in.
         for (int i = 1; i <= 39; i++) {
-            bigCounter.increment(myKmer, Frame.M3);
+            bigCounter.increment(myKmer, Frame.M0);
         }
         for (int i = 1; i <= 59; i++) {
             bigCounter.increment(myKmer, Frame.M2);
@@ -440,27 +440,27 @@ public class AppTest
             bigCounter.increment(myKmer, Frame.P2);
         }
         for (int i = 1; i <= 79; i++) {
-            bigCounter.increment(myKmer, Frame.P3);
+            bigCounter.increment(myKmer, Frame.P0);
         }
         // Verify that the invalid frame doesn't crash us.
         bigCounter.increment(myKmer, Frame.XX);
         assertEquals("Invalid frame has nonzero count.", 0, bigCounter.getCount(myKmer, Frame.XX));
         // Verify the above counts.
-        assertEquals("Count error in frame M3.", 40, bigCounter.getCount(myKmer, Frame.M3));
+        assertEquals("Count error in frame M3.", 40, bigCounter.getCount(myKmer, Frame.M0));
         assertEquals("Count error in frame M2.", 60, bigCounter.getCount(myKmer, Frame.M2));
         assertEquals("Count error in frame M1.", 100, bigCounter.getCount(myKmer, Frame.M1));
         assertEquals("Count error in frame F0.", 200, bigCounter.getCount(myKmer, Frame.F0));
         assertEquals("Count error in frame P1.", 500, bigCounter.getCount(myKmer, Frame.P1));
         assertEquals("Count error in frame P2.", 20, bigCounter.getCount(myKmer, Frame.P2));
-        assertEquals("Count error in frame P3.", 80, bigCounter.getCount(myKmer, Frame.P3));
+        assertEquals("Count error in frame P3.", 80, bigCounter.getCount(myKmer, Frame.P0));
         // Verify the fractions.
-        assertEquals("Frac error in frame M3.", 0.040, bigCounter.getFrac(myKmer, Frame.M3));
+        assertEquals("Frac error in frame M3.", 0.040, bigCounter.getFrac(myKmer, Frame.M0));
         assertEquals("Frac error in frame M2.", 0.060, bigCounter.getFrac(myKmer, Frame.M2));
         assertEquals("Frac error in frame M1.", 0.100, bigCounter.getFrac(myKmer, Frame.M1));
         assertEquals("Frac error in frame F0.", 0.200, bigCounter.getFrac(myKmer, Frame.F0));
         assertEquals("Frac error in frame P1.", 0.500, bigCounter.getFrac(myKmer, Frame.P1));
         assertEquals("Frac error in frame P2.", 0.020, bigCounter.getFrac(myKmer, Frame.P2));
-        assertEquals("Frac error in frame P3.", 0.080, bigCounter.getFrac(myKmer, Frame.P3));
+        assertEquals("Frac error in frame P3.", 0.080, bigCounter.getFrac(myKmer, Frame.P0));
         // Verify the best frame.
         Frame bestFrame = bigCounter.getBest(myKmer);
         assertSame("Incorrect best frame.", Frame.P1, bestFrame);
@@ -491,7 +491,7 @@ public class AppTest
         // Now we need to very serialization.  Write out the kmer counter.
         bigCounter.save("kmerTest.ser");
         // Save some key values.  We can't save them all, due to memory issues.
-        int saveMyP3 = bigCounter.getCount(myKmer, Frame.P3);
+        int saveMyP3 = bigCounter.getCount(myKmer, Frame.P0);
         int saveMyM1 = bigCounter.getCount(myKmer, Frame.M1);
         int saveTargetP2 = bigCounter.getCount(targetKmer, Frame.P2);
         int saveTargetF0 = bigCounter.getCount(targetKmer, Frame.F0);
@@ -500,7 +500,7 @@ public class AppTest
         // Read in the saved one.
         bigCounter = KmerFrameCounter.load("kmerTest.ser");
         // Test the saved values.
-        assertEquals("Error in saveMyP3.", saveMyP3, bigCounter.getCount(myKmer, Frame.P3));
+        assertEquals("Error in saveMyP3.", saveMyP3, bigCounter.getCount(myKmer, Frame.P0));
         assertEquals("Error in saveMyM1.", saveMyM1, bigCounter.getCount(myKmer, Frame.M1));
         assertEquals("Error in saveTargetP2.", saveTargetP2, bigCounter.getCount(targetKmer, Frame.P2));
         assertEquals("Error in saveTargetF0.", saveTargetF0, bigCounter.getCount(targetKmer, Frame.F0));
