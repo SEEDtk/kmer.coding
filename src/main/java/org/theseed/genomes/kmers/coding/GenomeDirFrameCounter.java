@@ -148,6 +148,8 @@ public class GenomeDirFrameCounter {
             // Open the kmer output file.
             File kmerFile = new File(this.outDir, "kmers.tbl");
             PrintWriter kmerWriter = new PrintWriter(kmerFile);
+            // Start with a header.
+            kmerWriter.println("kmer\tframe\tfraction\thits\n");
             // This will count the good kmers found.
             int goodCount = 0;
             // These are used to compute the mean hits and fraction.
