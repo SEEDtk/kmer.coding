@@ -9,7 +9,7 @@ import java.util.HashMap;
  *
  */
 public enum Frame {
-    M0("-3"), M2("-2"), M1("-1"), F0("0"), P1("+1"), P2("+2"), P0("+3"), XX("X");
+    M0("-1"), M2("-3"), M1("-2"), F0("0"), P1("+2"), P2("+3"), P0("+1"), XX("X");
 
     /** basic array of all frames */
     private static final Frame[] values = values();
