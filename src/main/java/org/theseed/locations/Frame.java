@@ -1,5 +1,7 @@
 package org.theseed.locations;
 
+import java.util.HashMap;
+
 /**
  * Enumeration describing the seven coding frames.  Note the special frame XX indicates an invalid result.
  *
@@ -26,6 +28,9 @@ public enum Frame {
 
     /** modular conversion table for minus strand */
     public static final Frame[] minusFrames = new Frame[] { M0, M1, M2 };
+
+    /** conversion table for labels to frame objects (built on first use) */
+    private static HashMap<String, Frame> labelMap = null;
 
     /** label of frame */
     String label;
@@ -62,6 +67,22 @@ public enum Frame {
      */
     public static Frame idxFrame(int idx) {
         return values[idx];
+    }
+
+    /**
+     * @return the frame corresponding to a label
+     *
+     * @param label	label whose frame object is desired
+     */
+    public static Frame frameOf(String label) {
+        if (labelMap == null) {
+            labelMap = new HashMap<String, Frame>();
+            for (Frame frm : values) {
+                labelMap.put(frm.label, frm);
+            }
+        }
+        Frame retVal = labelMap.getOrDefault(label, Frame.XX);
+        return retVal;
     }
 
 }

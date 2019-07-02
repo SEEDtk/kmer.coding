@@ -354,6 +354,69 @@ public abstract class Location implements Comparable<Location>, Cloneable {
         first.setRight(right);
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        // We don't multiply by 31 in this loop because the regions are commutative.
+        for (Region region : this.regions) {
+            result = result + region.hashCode();
+        }
+        result = prime * result + ((this.contigId == null) ? 0 : this.contigId.hashCode());
+        result = prime * result + (this.valid ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        boolean retVal;
+        if (this == obj) {
+            retVal = true;
+        } else if (obj == null) {
+            retVal = false;
+        } else if (getClass() != obj.getClass()) {
+            retVal = false;
+        } else {
+            Location other = (Location) obj;
+            if (this.contigId == null) {
+                if (other.contigId != null) {
+                    retVal = false;
+                } else {
+                    retVal = true;
+                }
+            } else if (!this.contigId.equals(other.contigId)) {
+                retVal = false;
+            } else {
+                if (this.regions == null) {
+                    if (other.regions != null) {
+                        retVal = false;
+                    } else {
+                        retVal = true;
+                    }
+                } else if (this.valid != other.valid) {
+                    retVal = false;
+                } else if (this.regions.size() != other.regions.size()) {
+                    retVal = false;
+                } else {
+                    // Here we have to compare the regions.  Both locations have the same number.
+                    // The comparison is unordered.
+                    retVal = true;
+                    for (Region myRegion : this.regions) {
+                        boolean found = false;
+                        for (Region region : other.regions) {
+                            if (region.equals(myRegion))
+                                found = true;
+                        }
+                        if (! found)
+                            retVal = false;
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
+
     /**
      * This nested class provides a comparator that is based solely on left position.
      */

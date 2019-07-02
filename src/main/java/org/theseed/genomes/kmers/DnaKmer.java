@@ -94,6 +94,15 @@ public class DnaKmer implements Comparable<DnaKmer> {
         return fromKmer(this.kIdx);
     }
 
+
+    /**
+     * Compute the hash code from the kmer's index.
+     */
+    @Override
+    public int hashCode() {
+        return this.kIdx;
+    }
+
     /**
      * @return the reverse complement of the DNA kmer sequence.
      */

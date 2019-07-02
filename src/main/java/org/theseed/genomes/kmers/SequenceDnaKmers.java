@@ -54,4 +54,11 @@ public class SequenceDnaKmers extends DnaKmer {
         return (retVal != DnaKmer.EOF);
     }
 
+    /**
+     * @return a copy of the kmer at the current position
+     */
+    public DnaKmer getCopy() {
+        return new DnaKmer(this.idx());
+    }
+
 }

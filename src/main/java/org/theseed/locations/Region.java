@@ -99,4 +99,29 @@ public class Region implements Comparable<Region> {
         return retVal;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + this.left;
+        result = prime * result + this.right;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Region other = (Region) obj;
+        if (this.left != other.left)
+            return false;
+        if (this.right != other.right)
+            return false;
+        return true;
+    }
+
 }

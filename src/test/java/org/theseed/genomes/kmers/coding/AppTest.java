@@ -40,7 +40,6 @@ public class AppTest
     public AppTest( String testName ) throws NumberFormatException, FileNotFoundException, JsonException
     {
         super( testName );
-        // Load the test genome.
         this.myGto = new Genome("gto_test/1313.7001.gto");
     }
 
@@ -138,8 +137,10 @@ public class AppTest
         DnaKmer kmerB = new DnaKmer("actccagcaagcatc");
         DnaKmer kmerC = new DnaKmer("gatgcttgctggagt");
         assertTrue("Equal returns FALSE for same kmers.", kmerA.equals(kmerB));
+        assertEquals("Hash codes not equal for same kmers.", kmerA.hashCode(), kmerB.hashCode());
         assertTrue("Equal not commutative for same kmers.", kmerB.equals(kmerA));
         assertFalse("Equal returns TRUE for revcmp kmers.", kmerA.equals(kmerC));
+        assertFalse("Hash codes equal for same revcmp kmers.", kmerA.hashCode() == kmerC.hashCode());
         assertEquals("Compare returns nonzero for same kmers.", 0, kmerA.compareTo(kmerB));
         assertFalse("Compare returns zero for revcmp kmers.", kmerA.compareTo(kmerC) == 0);
         assertEquals("Comparison not an ordering.", kmerA.compareTo(kmerC), -kmerC.compareTo(kmerA));
@@ -157,6 +158,10 @@ public class AppTest
         assertEquals("M2 did not reverse.", Frame.P1, Frame.M2.rev());
         assertEquals("M1 did not reverse.", Frame.P2, Frame.M1.rev());
         assertEquals("F0 did not reverse.", Frame.F0, Frame.F0.rev());
+        // Verify frame construction from labels.
+        for (Frame frm : Frame.all) {
+            assertEquals("Wrong frame for label " + frm, frm, Frame.frameOf(frm.toString()));
+        }
         // Create a location for our main sequence.
         Location myLoc = Location.create("mySequence", "+");
         myLoc.addRegion(10, 20);
@@ -286,6 +291,13 @@ public class AppTest
      * Location comparison test
      */
     public void testLocations() {
+        Region region1 = new Region(1000, 2000);
+        Region region2 = new Region(1000, 2000);
+        Region region3 = new Region(2000, 3000);
+        assertTrue("region1 not equal to region 2.", region1.equals(region2));
+        assertFalse("region1 equal to region 3.", region1.equals(region3));
+        assertTrue("Region equals is not commutative.", region2.equals(region1));
+        assertEquals("Equal regions have different hash codes.", region1.hashCode(), region2.hashCode());
         Location loc1 = Location.create("myContig", "+", 1000, 1999);
         Location loc2 = Location.create("myContig", "-", 1100, 1199);
         Location loc3 = Location.create("myContig", "-", 1150, 1249);
@@ -296,6 +308,17 @@ public class AppTest
         assertFalse("loc2 contains loc3.", loc2.contains(loc3));
         assertFalse("loc3 contains loc2.", loc3.contains(loc2));
         assertFalse("loc1 contains loc4.", loc1.contains(loc4));
+        Location loc5 = Location.create("myContig", "+",  1000, 2000, 3000, 4000);
+        Location loc6 = Location.create("myContig", "+", 3000, 4000, 1000, 2000);
+        Location loc7 = Location.create("yourContig", "+", 1000, 2000, 3000, 4000);
+        Location loc8 = Location.create("myContig", "-", 1000, 2000, 3000, 4000);
+        Location loc9 = Location.create("myContig",  "+",  1000, 1999, 3000, 4000);
+        assertTrue("loc5 not equal to loc6.", loc5.equals(loc6));
+        assertEquals("Equal locations have different hash codes.", loc5.hashCode(), loc6.hashCode());
+        assertFalse("Different contigs compare equal.", loc5.equals(loc7));
+        assertFalse("Different strands compare equal.", loc5.equals(loc8));
+        assertFalse("Different region counts compare equal.", loc5.equals(loc1));
+        assertFalse("Different region extents compare equal.", loc5.equals(loc9));
     }
 
     /**
