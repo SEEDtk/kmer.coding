@@ -6,6 +6,7 @@ package org.theseed.genomes.kmers.coding;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -22,9 +23,12 @@ import org.theseed.locations.Frame;
  * The command-line options are
  *
  * 	K		kmer size (default is 15)
+ * 	-t		minimum best-fraction for a useful kmer (default is 0.80)
+ * 	-m		minimum best-hits for a useful kmer (default is 30)
+ * 	-i		input directory containing the genomes-- if omitted, a previously-built database is
+ * 			loaded from the output directory
  *
- * The positional parameters are the name of the input directory (which must exist) and the
- * name of the output directory (which may need to be created).
+ * The positional parameter is the name of the output directory (which may need to be created).
  *
  * @author Bruce Parrello
  */
@@ -75,7 +79,7 @@ public class GenomeDirFrameCounter {
         boolean retVal = false;
         // Set the defaults.
         this.threshold = 0.80;
-        this.minHits = 20;
+        this.minHits = 30;
         this.inputDir = null;
         CmdLineParser parser = new CmdLineParser(this);
         try {
@@ -149,13 +153,16 @@ public class GenomeDirFrameCounter {
             File kmerFile = new File(this.outDir, "kmers.tbl");
             PrintWriter kmerWriter = new PrintWriter(kmerFile);
             // Start with a header.
-            kmerWriter.println("kmer\tframe\tfraction\thits\n");
+            kmerWriter.print("kmer\tframe\tfraction\thits\n");
             // This will count the good kmers found.
             int goodCount = 0;
             // These are used to compute the mean hits and fraction.
             double totalFrac = 0.0;
             int countKmers = 0;
             long totalHits = 0;
+            // This will count the good kmers per frame.
+            int[] found = new int[Frame.nFrames];
+            Arrays.fill(found, 0);
             // Loop through all the kmers.
             for (DnaKmer kmer : bigCounter) {
                 Frame bestFrame = bigCounter.getBest(kmer);
@@ -168,6 +175,7 @@ public class GenomeDirFrameCounter {
                     // Here the kmer is good enough.
                     kmerWriter.printf("%s\t%s\t%04.2f\t%d\n", kmer, bestFrame, frac, hits);
                     goodCount++;
+                    found[bestFrame.ordinal()]++;
                 }
             }
             kmerWriter.close();
@@ -176,6 +184,10 @@ public class GenomeDirFrameCounter {
             double meanFrac = totalFrac / countKmers;
             double meanHits = ((double) totalHits) / countKmers;
             System.err.printf("Mean hits per kmer = %4.2f, mean fraction = %4.2f", meanHits, meanFrac);
+            System.err.println("Useful kmers per frame:");
+            for (Frame frm : Frame.all) {
+                System.err.printf("%-3s  %8d\n", frm, found[frm.ordinal()]);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
