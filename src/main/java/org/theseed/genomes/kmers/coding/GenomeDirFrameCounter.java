@@ -55,13 +55,12 @@ public class GenomeDirFrameCounter {
     @Option(name="-m", aliases= {"--minHits"}, metaVar="0", usage="minimum hits in the best frame for a useful kmer")
     private int minHits;
 
-    /** input directory name */
-    @Argument(index=0, metaVar="inputDir", usage="input GTO directory",
-            required=true, multiValued=false)
+    /** input directory name; if omitted, the kmer database is reloaded from the output directory */
+    @Option(name="-i", aliases={"--inputDir"}, metaVar="inputDir", usage="input GTO directory")
     private File inputDir;
 
     /** output directory */
-    @Argument(index=1, metaVar="outDir", usage="output result directory",
+    @Argument(index=0, metaVar="outDir", usage="output result directory",
             required=true, multiValued=false)
     private File outDir;
 
@@ -76,14 +75,17 @@ public class GenomeDirFrameCounter {
         boolean retVal = false;
         // Set the defaults.
         this.threshold = 0.80;
-        this.minHits = 0;
+        this.minHits = 20;
+        this.inputDir = null;
         CmdLineParser parser = new CmdLineParser(this);
         try {
             parser.parseArgument(args);
             if (this.help) {
                 parser.printUsage(System.err);
             } else {
-                this.inputGenomes = new GenomeDirectory(this.inputDir.getPath());
+                if (this.inputDir != null) {
+                    this.inputGenomes = new GenomeDirectory(this.inputDir.getPath());
+                }
                 if (this.outDir.isDirectory()) {
                     retVal = true;
                 } else {
@@ -104,46 +106,75 @@ public class GenomeDirFrameCounter {
 
     public void run() {
         // Display the parameters.
-        System.err.println("Input directory is " + this.inputGenomes + ".");
+        if (this.inputDir != null) {
+            System.err.println("Input directory is " + this.inputGenomes + ".");
+        }
         System.err.println("Output directory is " + this.outDir + ".");
         System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
-        // Create the kmer counter.
-        KmerFrameCounter bigCounter = new KmerFrameCounter();
-        // Process the genomes.
-        int gCount = 0;
-        long start = System.currentTimeMillis();
-        for (Genome genome : this.inputGenomes) {
-            gCount++;
-            System.err.println("Processing #" + gCount + ": " + genome + ".");
-            bigCounter.processGenome(genome);
-            if (gCount % 100 == 0) {
-                double secsPerGenome = (System.currentTimeMillis() - start) / (1000 * gCount);
-                double remainingMinutes = (this.inputGenomes.size() - gCount) * secsPerGenome / 60;
-                System.err.printf("TIME ESTIMATE: %4.2f seconds/genome, %4.1f minutes left.\n",
-                        secsPerGenome, remainingMinutes);
-            }
-        }
         try {
-            System.err.println("Saving results.");
-            File outFile = new File(this.outDir, "kmers.ser");
-            bigCounter.save(outFile);
+            // Compute the kmer file name.
+            File saveFile = new File(this.outDir, "kmers.ser");
+            // Create the kmer counter.
+            KmerFrameCounter bigCounter;
+            if (this.inputDir != null) {
+                // Here we have to create the kmer counter from the input directory.
+                bigCounter = new KmerFrameCounter();
+                // Process the genomes.
+                int gCount = 0;
+                long start = System.currentTimeMillis();
+                for (Genome genome : this.inputGenomes) {
+                    gCount++;
+                    System.err.println("Processing #" + gCount + ": " + genome + ".");
+                    bigCounter.processGenome(genome);
+                    // Display a time estimate every 100 genomes.
+                    if (gCount % 100 == 0) {
+                        double secsPerGenome = (System.currentTimeMillis() - start) / (1000 * gCount);
+                        double remainingMinutes = (this.inputGenomes.size() - gCount) * secsPerGenome / 60;
+                        System.err.printf("TIME ESTIMATE: %4.2f seconds/genome, %4.1f minutes left.\n",
+                                secsPerGenome, remainingMinutes);
+                    }
+                }
+                System.err.println("Saving results.");
+                bigCounter.save(saveFile);
+            } else {
+                // Here we have to reload an existing kmer counter database.
+                System.err.println("Loading saved kmer database.");
+                long start = System.currentTimeMillis();
+                bigCounter = KmerFrameCounter.load(saveFile);
+                double timeToLoad = (System.currentTimeMillis() - start) / 1000;
+                System.err.printf("%4.2f seconds to load database.\n", timeToLoad);
+            }
             System.err.println("Searching for useful kmers.");
             // Open the kmer output file.
             File kmerFile = new File(this.outDir, "kmers.tbl");
             PrintWriter kmerWriter = new PrintWriter(kmerFile);
-            int kCount = 0;
+            // This will count the good kmers found.
+            int goodCount = 0;
+            // These are used to compute the mean hits and fraction.
+            double totalFrac = 0.0;
+            int countKmers = 0;
+            long totalHits = 0;
+            // Loop through all the kmers.
             for (DnaKmer kmer : bigCounter) {
                 Frame bestFrame = bigCounter.getBest(kmer);
                 double frac = bigCounter.getFrac(kmer, bestFrame);
                 int hits = bigCounter.getCount(kmer, bestFrame);
+                totalFrac += frac;
+                totalHits += hits;
+                countKmers++;
                 if (frac > this.threshold && hits > this.minHits) {
                     // Here the kmer is good enough.
                     kmerWriter.printf("%s\t%s\t%04.2f\t%d\n", kmer, bestFrame, frac, hits);
+                    goodCount++;
                 }
             }
             kmerWriter.close();
-            System.err.println(kCount + " good kmers found.");
-        } catch (IOException e) {
+            System.err.println(goodCount + " good kmers found.");
+            System.err.println(countKmers + " unique kmers found.");
+            double meanFrac = totalFrac / countKmers;
+            double meanHits = ((double) totalHits) / countKmers;
+            System.err.printf("Mean hits per kmer = %4.2f, mean fraction = %4.2f", meanHits, meanFrac);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
