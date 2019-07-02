@@ -149,6 +149,14 @@ public class AppTest
      * Main test of frames.
      */
     public void testFrames() {
+        // Verify frame transformations.
+        assertEquals("P3 did not reverse.", Frame.M3, Frame.P3.rev());
+        assertEquals("P2 did not reverse.", Frame.M1, Frame.P2.rev());
+        assertEquals("P1 did not reverse.", Frame.M2, Frame.P1.rev());
+        assertEquals("M3 did not reverse.", Frame.P3, Frame.M3.rev());
+        assertEquals("M2 did not reverse.", Frame.P1, Frame.M2.rev());
+        assertEquals("M1 did not reverse.", Frame.P2, Frame.M1.rev());
+        assertEquals("F0 did not reverse.", Frame.F0, Frame.F0.rev());
         // Create a location for our main sequence.
         Location myLoc = Location.create("mySequence", "+");
         myLoc.addRegion(10, 20);
