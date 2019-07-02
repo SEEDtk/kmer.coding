@@ -153,7 +153,7 @@ public class GenomeDirFrameCounter {
             File kmerFile = new File(this.outDir, "kmers.tbl");
             PrintWriter kmerWriter = new PrintWriter(kmerFile);
             // Start with a header.
-            kmerWriter.print("kmer\tframe\tfraction\thits\n");
+            kmerWriter.println("kmer\tframe\tfraction\thits");
             // This will count the good kmers found.
             int goodCount = 0;
             // These are used to compute the mean hits and fraction.
@@ -163,6 +163,7 @@ public class GenomeDirFrameCounter {
             // This will count the good kmers per frame.
             int[] found = new int[Frame.nFrames];
             Arrays.fill(found, 0);
+            long start = System.currentTimeMillis();
             // Loop through all the kmers.
             for (DnaKmer kmer : bigCounter) {
                 Frame bestFrame = bigCounter.getBest(kmer);
@@ -173,21 +174,30 @@ public class GenomeDirFrameCounter {
                 countKmers++;
                 if (frac > this.threshold && hits > this.minHits) {
                     // Here the kmer is good enough.
-                    kmerWriter.printf("%s\t%s\t%04.2f\t%d\n", kmer, bestFrame, frac, hits);
+                    kmerWriter.format("%s\t%s\t%04.2f\t%d%n", kmer, bestFrame, frac, hits);
                     goodCount++;
                     found[bestFrame.ordinal()]++;
                 }
             }
+            double secsToSearch = ((double) (System.currentTimeMillis() - start)) / 1000;
+            System.err.format("%4.2f seconds to search kmer database%n", secsToSearch);
             kmerWriter.close();
-            System.err.println(goodCount + " good kmers found.");
-            System.err.println(countKmers + " unique kmers found.");
+            System.err.println("Writing report.");
+            // Open the report output file.
+            File reportFile = new File(this.outDir, "kmers.report.txt");
+            PrintWriter reportWriter = new PrintWriter(reportFile);
+            // Write the report.
+            reportWriter.println(goodCount + " good kmers found.");
+            reportWriter.println(countKmers + " unique kmers found.");
             double meanFrac = totalFrac / countKmers;
             double meanHits = ((double) totalHits) / countKmers;
-            System.err.printf("Mean hits per kmer = %4.2f, mean fraction = %4.2f", meanHits, meanFrac);
-            System.err.println("Useful kmers per frame:");
+            reportWriter.format("Mean hits per kmer = %4.2f, mean fraction = %4.2f%n", meanHits, meanFrac);
+            reportWriter.println("Useful kmers per frame:");
             for (Frame frm : Frame.all) {
-                System.err.printf("%-3s  %8d\n", frm, found[frm.ordinal()]);
+                reportWriter.format("%-3s  %8d%n", frm, found[frm.ordinal()]);
             }
+            reportWriter.close();
+            System.err.println("All done.");
         } catch (Exception e) {
             e.printStackTrace();
         }
