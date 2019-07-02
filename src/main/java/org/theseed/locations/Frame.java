@@ -19,7 +19,7 @@ public enum Frame {
     public static final int nFrames = 7;
 
     /** reverse complement map */
-    private static final Frame[] reverse = new Frame[] { P3, P1, P2, F0, M2, M1, M2 };
+    private static final Frame[] reverse = new Frame[] { P3, P1, P2, F0, M2, M1, M3 };
 
     /** modular conversion table for plus strand */
     public static final Frame[] plusFrames = new Frame[] { P3, P1, P2 };
