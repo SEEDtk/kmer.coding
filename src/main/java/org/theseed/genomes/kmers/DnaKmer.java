@@ -204,6 +204,43 @@ public class DnaKmer implements Comparable<DnaKmer> {
     }
 
     /**
+     * Compute the numeric representation of the reverse compliment of a DNA kmer.
+     * This is more limited than fromString, since it does not allow a starting offset
+     * and the string must be the proper size.
+     *
+     * @param sequence	the string of base pairs making up the kmer.
+     *
+     * @return the numeric index for the kmer, or -1 if
+     */
+    static public int fromRString(String sequence) {
+        int retVal = 0;
+        if (kmerSize > sequence.length()) {
+            retVal = EOF;
+        } else {
+            for (int i = kmerSize - 1; i >= 0 && retVal >= 0; i--) {
+                retVal <<= 2;
+                switch (sequence.charAt(i)) {
+                case 'a' :
+                    retVal |= 3;
+                    break;
+                case 'c' :
+                    retVal |= 2;
+                    break;
+                case 'g' :
+                    retVal |= 1;
+                    break;
+                case 't' :
+                case 'u' :
+                    break;
+                default :
+                    retVal = NULL;
+                }
+            }
+        }
+        return retVal;
+    }
+
+    /**
      * @return the number of possible kmers
      */
     public static int maxKmers() {
@@ -245,15 +282,6 @@ public class DnaKmer implements Comparable<DnaKmer> {
      */
     public boolean isRev(DnaKmer other) {
         return (this.kIdx == other.rIdx());
-    }
-
-    /**
-     * Set this kmer to the reverse compliment of the specified other kmer.
-     *
-     * @param kmer	other kmer whose reverse compliment is needed
-     */
-    public void setRev(SequenceDnaKmers kmer) {
-        this.kIdx = kmer.rIdx();
     }
 
 

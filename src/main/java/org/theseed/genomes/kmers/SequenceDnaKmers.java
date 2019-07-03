@@ -62,22 +62,17 @@ public abstract class SequenceDnaKmers extends DnaKmer {
         int retVal = DnaKmer.NULL;
         while (retVal == DnaKmer.NULL) {
             this.pos++;
-            String sequence = this.getLetters(this.sequence, this.pos);
-            retVal = DnaKmer.fromString(sequence, 1);
+            String letters = this.getLetters();
+            retVal = DnaKmer.fromString(letters, 1);
         }
         super.setIdx(retVal);
         return (retVal != DnaKmer.EOF);
     }
 
     /**
-     * Get the sequence of letters at the current position used to build a kmer of this type.
-     *
-     * @param sequence	source sequence from which the letters should be taken
-     * @param pos		current position in the sequence
-     *
-     * @return the string of letters; if we are close to the end, it will be too short
+     * @return the sequence of letters at the current position used to build a kmer of this type.
      */
-    protected abstract String getLetters(String sequence, int pos);
+    protected abstract String getLetters();
 
     /**
      * @return a copy of the kmer at the current position
@@ -104,5 +99,31 @@ public abstract class SequenceDnaKmers extends DnaKmer {
         }
         return retVal;
     }
+
+
+    /**
+     * Set the embedded DNA kmer to the reverse complement of what's at the current position.
+     */
+    public abstract void reverse();
+
+    /**
+     * @return the substring at the current position in the DNA string
+     *
+     * @param len	length of substring to return
+     *
+     * NOTE this is usually used for debugging.
+     */
+    public String stringAtPos(int len) {
+        int start = this.pos - 1;
+        int end = start + len;
+        if (end > this.sequence.length()) end = this.sequence.length();
+        return this.sequence.substring(start, end);
+    }
+
+    /**
+     * @return the size of the region covered by a kmer for this processor
+     */
+
+    public abstract int regionSize();
 
 }

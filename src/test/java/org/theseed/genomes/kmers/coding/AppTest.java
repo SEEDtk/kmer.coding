@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.github.cliftonlabs.json_simple.JsonException;
 
+import org.theseed.genomes.Contig;
 import org.theseed.genomes.Feature;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
@@ -145,8 +146,9 @@ public class AppTest
                         mySequence.substring(pos+3*k-1, pos+3*k), kmer.substring(2*k, 2*k+1));
             }
         }
-        assertEquals("Iterator ended too soon.", 47, iterator.getPos());
+        assertEquals("Iterator ended too soon.", 46, iterator.getPos());
         // Test kmer comparison.
+        DnaKmer.setSize(15);
         DnaKmer kmerA = new DnaKmer("actccagcaagcatc");
         DnaKmer kmerB = new DnaKmer("actccagcaagcatc");
         DnaKmer kmerC = new DnaKmer("gatgcttgctggagt");
@@ -158,6 +160,11 @@ public class AppTest
         assertEquals("Compare returns nonzero for same kmers.", 0, kmerA.compareTo(kmerB));
         assertFalse("Compare returns zero for revcmp kmers.", kmerA.compareTo(kmerC) == 0);
         assertEquals("Comparison not an ordering.", kmerA.compareTo(kmerC), -kmerC.compareTo(kmerA));
+        // Test fromRString
+        kmerA.setIdx(DnaKmer.fromRString("actccagcaagcatc"));
+        assertEquals("Rstring did not produce proper kmer.", kmerA, kmerC);
+        assertEquals("Short kmer failed in RString.", DnaKmer.EOF, DnaKmer.fromRString("aaaac"));
+        assertEquals("Bad char failed in RString.", DnaKmer.NULL, DnaKmer.fromRString("acgtaxgtacgtcac"));
     }
 
     /**
@@ -165,12 +172,12 @@ public class AppTest
      */
     public void testFrames() {
         // Verify frame transformations.
-        assertEquals("P3 did not reverse.", Frame.M0, Frame.P0.rev());
-        assertEquals("P2 did not reverse.", Frame.M1, Frame.P2.rev());
-        assertEquals("P1 did not reverse.", Frame.M2, Frame.P1.rev());
-        assertEquals("M3 did not reverse.", Frame.P0, Frame.M0.rev());
-        assertEquals("M2 did not reverse.", Frame.P1, Frame.M2.rev());
-        assertEquals("M1 did not reverse.", Frame.P2, Frame.M1.rev());
+        assertEquals("P0 did not reverse.", Frame.M0, Frame.P0.rev());
+        assertEquals("P1 did not reverse.", Frame.M1, Frame.P1.rev());
+        assertEquals("P2 did not reverse.", Frame.M2, Frame.P2.rev());
+        assertEquals("M0 did not reverse.", Frame.P0, Frame.M0.rev());
+        assertEquals("M1 did not reverse.", Frame.P1, Frame.M1.rev());
+        assertEquals("M2 did not reverse.", Frame.P2, Frame.M2.rev());
         assertEquals("F0 did not reverse.", Frame.F0, Frame.F0.rev());
         // Verify frame construction from labels.
         for (Frame frm : Frame.all) {
@@ -523,7 +530,7 @@ public class AppTest
         bigCounter.processGenome(this.myGto);
         // Checking the genome is hard.  We are going to check for "tgaatgaac"
         // in frame M1. We know this is in the M1 frame for one protein.
-        DnaKmer targetKmer = new DnaKmer("tgaatgaac");
+        DnaKmer targetKmer = new DnaKmer("gttcattca");
         assertTrue("Target kmer not in known frame.", bigCounter.getCount(targetKmer, Frame.M1) > 0);
         // Now we need to very serialization.  Write out the kmer counter.
         bigCounter.save("kmerTest.ser");
@@ -541,6 +548,40 @@ public class AppTest
         assertEquals("Error in saveMyM1.", saveMyM1, bigCounter.getCount(myKmer, Frame.M1));
         assertEquals("Error in saveTargetP2.", saveTargetP2, bigCounter.getCount(targetKmer, Frame.P2));
         assertEquals("Error in saveTargetF0.", saveTargetF0, bigCounter.getCount(targetKmer, Frame.F0));
+    }
+
+    /**
+     * Test counter on spaced kmers.
+     */
+    public void testSpacedCounting() {
+        DnaKmer.setSize(10);
+        // Do some sanity checks on spaced reads.
+        SequenceDnaSpacedKmers newProcessor = new SequenceDnaSpacedKmers("atgaatgaacgttaccagtgtttaaaaactaaagaatatcaggcacttttatct");
+        assertTrue("Failed on first kmer read.", newProcessor.nextKmer());
+        assertEquals("First kmer is wrong.", "ataagacgta", newProcessor.toString());
+        newProcessor.reverse();
+        assertEquals("Reverse of first kmer is wrong.", "gtacttatca", newProcessor.toString());
+        assertTrue("Failed on second kmer read.", newProcessor.nextKmer());
+        assertEquals("Second kmer is wrong.", "tgataagtac", newProcessor.toString());
+        // Try a spaced reading of a genome.
+        KmerFrameCounter bigCounter = new KmerFrameCounter(SequenceDnaSpacedKmers.class);
+        bigCounter.processGenome(myGto);
+        // Get the DNA for our sample peg.
+        String dna = myGto.getDna("fig|1313.7001.peg.758");
+        assertEquals("Wrong DNA for peg somehow.", "atgaatgaacgttac", dna.substring(0, 15));
+        // Check it against the contig.
+        Contig contig = myGto.getContig("1313.7001.con.0017");
+        String origDna = contig.getDna(new Region(30923, 30937));
+        assertEquals("Wrong DNA in contig somehow.", "gtaacgttcattcat", origDna);
+        // Insure we found stuff we know is in our sample peg.
+        // atgaatgaacgttaccagtgtttaaaaactaaagaatatcaggcacttttatct
+        // at aa ga cg ta
+        DnaKmer kmer = new DnaKmer("ataagacgta");
+        assertTrue("ataagacgta not found in P0.", bigCounter.getCount(kmer, Frame.P0) > 0);
+        kmer = new DnaKmer("tgataagtac");
+        assertTrue("tgataagtac not found in P1.", bigCounter.getCount(kmer, Frame.P1) > 0);
+        kmer = new DnaKmer("gatgacttcc");
+        assertTrue("gatgacttcc not found in P2.", bigCounter.getCount(kmer, Frame.P2) > 0);
     }
 
     /**

@@ -21,11 +21,21 @@ public class SequenceDnaNormalKmers extends SequenceDnaKmers {
     }
 
     @Override
-    protected String getLetters(String sequence, int pos) {
-        int i = pos - 1;
+    protected String getLetters() {
+        int i = this.pos - 1;
         int n = i + DnaKmer.getSize();
-        if (n > sequence.length()) n = sequence.length();
-        return sequence.substring(i, n);
+        if (n > this.sequence.length()) n = sequence.length();
+        return this.sequence.substring(i, n);
+    }
+
+    @Override
+    public void reverse() {
+        this.setIdx(this.rIdx());
+    }
+
+    @Override
+    public int regionSize() {
+        return DnaKmer.getSize();
     }
 
 }

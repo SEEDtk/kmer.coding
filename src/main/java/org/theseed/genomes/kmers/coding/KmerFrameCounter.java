@@ -247,11 +247,8 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         for (Contig contig : genome.getContigs()) {
             // Get the location list for this contig.
             LocationList contigLocs = contigMap.get(contig.getId());
-            // Count kmers on the plus strand.
+            // Count kmers on this sequence.
             SequenceDnaKmers kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
-            countSequence(contigLocs, kmerProcessor);
-            // Count kmers on the minus strand.
-            kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getRSequence());
             countSequence(contigLocs, kmerProcessor);
         }
 
@@ -264,12 +261,22 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      * @param kmerProcessor	SequenceDnaKmers object for getting kmers out of the sequence
      */
     private void countSequence(LocationList contigLocs, SequenceDnaKmers kmerProcessor) {
+        // Loop through the sequence.
         while (kmerProcessor.nextKmer()) {
             int pos = kmerProcessor.getPos();
-            Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
+            Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + kmerProcessor.regionSize() - 1);
             if (kmerFrame != Frame.XX) {
                 this.increment(kmerProcessor, kmerFrame);
+                // Compute the reverse complement kmer for the current position.  This is not necessarily
+                // the reverse complement of the kmer, since the kmer may not cover all of the base pairs
+                // in the region.  For this reason, the reverse may contain invalid characters and have to
+                // be rejected.
+                kmerProcessor.reverse();
+                if (kmerProcessor.idx() != DnaKmer.NULL) {
+                    this.increment(kmerProcessor, kmerFrame.rev());
+                }
             }
+
         }
     }
 
