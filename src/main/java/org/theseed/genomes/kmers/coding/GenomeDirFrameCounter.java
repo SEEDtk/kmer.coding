@@ -68,7 +68,7 @@ public class GenomeDirFrameCounter {
         // Determine the kmer type.
         if (newSize.endsWith("p")) {
             kmerType = SequenceDnaSpacedKmers.class;
-            realSize = Integer.valueOf(newSize.substring(0, newSize.length()));
+            realSize = Integer.valueOf(newSize.substring(0, newSize.length() - 1));
             // Insure the size is valid for a spaced kmer.
             if (realSize % 2 != 0) {
                 throw new IllegalArgumentException("Spaced kmer sizes must be a multiple of 2.");
@@ -187,6 +187,7 @@ public class GenomeDirFrameCounter {
                 System.err.println("Loading saved kmer database.");
                 long start = System.currentTimeMillis();
                 bigCounter = new KmerFrameCounter(saveFile);
+                this.kmerType = bigCounter.getKmerType();
                 double timeToLoad = (System.currentTimeMillis() - start) / 1000;
                 System.err.printf("%4.2f seconds to load database.\n", timeToLoad);
             }
@@ -333,5 +334,42 @@ public class GenomeDirFrameCounter {
             }
         }
     }
+
+    /**
+     * @return the type of kmers used for counting
+     */
+    public Class<? extends SequenceDnaKmers> getKmerType() {
+        return this.kmerType;
+    }
+
+    /**
+     * @return the kmer size used for counting
+     */
+    public int getKmerSize() {
+        return DnaKmer.getSize();
+    }
+
+    /**
+     * @return the number of input genomes, or 0 if we are restoring from a saved file
+     */
+    public int getInputGenomesCount() {
+        int retVal = 0;
+        if (this.inputDir != null) {
+            retVal = this.inputGenomes.size();
+        }
+        return retVal;
+    }
+
+    /**
+     * @return the name of the test directory, or an empty string if there is none
+     */
+    public String getTestDir() {
+        String retVal = "";
+        if (this.testDir != null) {
+            retVal = this.testDir.getPath();
+        }
+        return retVal;
+    }
+
 
 }

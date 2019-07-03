@@ -560,6 +560,25 @@ public class AppTest
         }
     }
 
+    /**
+     * Test command line
+     */
+    public void testCommandLine() {
+        String[] args1 = {"--inputDir", "gto_test", "-K",  "8p",  "--testDir",
+                "Bins_HMP", "TestKmers" };
+        GenomeDirFrameCounter runObject = new GenomeDirFrameCounter();
+        runObject.parseCommand(args1);
+        assertEquals("Incorrect kmer type (8p).", SequenceDnaSpacedKmers.class, runObject.getKmerType());
+        assertEquals("Incorrect kmer size (8p).", 8, runObject.getKmerSize());
+        assertEquals("Incorrect input directory.", 4, runObject.getInputGenomesCount());
+        assertEquals("Incorrect test directory.", "Bins_HMP", runObject.getTestDir());
+        String args2[] = { "-K", "12", "TestKmers2" };
+        runObject.parseCommand(args2);
+        assertEquals("Incorrect kmer type (12).", SequenceDnaNormalKmers.class, runObject.getKmerType());
+        assertEquals("Incorrect kmer size (12).", 12, runObject.getKmerSize());
+        assertEquals("Incorrect use of input directory.", 0, runObject.getInputGenomesCount());
+        assertEquals("Incorrect use of test directory.", "", runObject.getTestDir());
+    }
 }
 
 

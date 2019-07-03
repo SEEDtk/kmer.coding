@@ -320,8 +320,11 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
     }
 
 
-    private void readObject(ObjectInputStream inStream) {
-
+    /**
+     * @return the kmer type used by this counter.
+     */
+    public Class<? extends SequenceDnaKmers> getKmerType() {
+        return this.kmerType;
     }
 
 }
