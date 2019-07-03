@@ -174,7 +174,7 @@ public class GenomeDirFrameCounter {
                     bigCounter.processGenome(genome);
                     // Display a time estimate every 100 genomes.
                     if (gCount % 100 == 0) {
-                        double secsPerGenome = (System.currentTimeMillis() - start) / (1000 * gCount);
+                        double secsPerGenome = ((double) (System.currentTimeMillis() - start)) / (1000 * gCount);
                         double remainingMinutes = (this.inputGenomes.size() - gCount) * secsPerGenome / 60;
                         System.err.printf("TIME ESTIMATE: %4.2f seconds/genome, %4.1f minutes left.\n",
                                 secsPerGenome, remainingMinutes);
@@ -188,7 +188,7 @@ public class GenomeDirFrameCounter {
                 long start = System.currentTimeMillis();
                 bigCounter = new KmerFrameCounter(saveFile);
                 this.kmerType = bigCounter.getKmerType();
-                double timeToLoad = (System.currentTimeMillis() - start) / 1000;
+                double timeToLoad = ((double) (System.currentTimeMillis() - start)) / 1000;
                 System.err.printf("%4.2f seconds to load database.\n", timeToLoad);
             }
             System.err.println("Searching for useful kmers.");
