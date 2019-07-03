@@ -7,15 +7,24 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.theseed.genomes.Contig;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
+import org.theseed.genomes.kmers.SequenceDnaKmers;
+import org.theseed.genomes.kmers.predictor.FramePredictor;
 import org.theseed.locations.Frame;
+import org.theseed.locations.LocationList;
+import org.theseed.utils.CountMap;
+
+import com.github.cliftonlabs.json_simple.JsonException;
 
 /**
  *
@@ -51,6 +60,10 @@ public class GenomeDirFrameCounter {
         DnaKmer.setSize(newSize);
     }
 
+    /** genome directory for optional testing set */
+    @Option(name="-testDir", aliases={"--testDir"}, metaVar="genomeDir", usage="directory of GTOs for testing")
+    private File testDir;
+
     /** minimum fraction for a kmer to be useful */
     @Option(name="-t", aliases={"--threshold"}, metaVar="0.8", usage="best-percent threshold for a useful kmer")
     private double threshold;
@@ -81,6 +94,7 @@ public class GenomeDirFrameCounter {
         this.threshold = 0.80;
         this.minHits = 30;
         this.inputDir = null;
+        this.testDir = null;
         CmdLineParser parser = new CmdLineParser(this);
         try {
             parser.parseArgument(args);
@@ -191,15 +205,100 @@ public class GenomeDirFrameCounter {
             reportWriter.println(countKmers + " unique kmers found.");
             double meanFrac = totalFrac / countKmers;
             double meanHits = ((double) totalHits) / countKmers;
-            reportWriter.format("Mean hits per kmer = %4.2f, mean fraction = %4.2f%n", meanHits, meanFrac);
-            reportWriter.println("Useful kmers per frame:");
-            for (Frame frm : Frame.all) {
-                reportWriter.format("%-3s  %8d%n", frm, found[frm.ordinal()]);
-            }
+            reportWriter.format("Mean hits per kmer = %4.2f, mean fraction = %4.2f%n",
+                    meanHits, meanFrac);
+            this.testFramePredictions(kmerFile, reportWriter, found);
             reportWriter.close();
             System.err.println("All done.");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Produce a report on the predictive power of a kmer set produced by this object.
+     *
+     * @param predFile		"kmers.tbl" file output by this object.
+     * @param reportWriter	output writer for the report
+     * @param found			an array of kmers found for each frame
+     *
+     * @throws NumberFormatException
+     * @throws IOException
+     * @throws JsonException
+     */
+    private void testFramePredictions(File predFile, PrintWriter reportWriter, int[] found)
+            throws NumberFormatException, IOException, JsonException {
+        // We will track counts in here.
+        CountMap<DnaKmer> testCounts = new CountMap<DnaKmer>();
+        int misses = 0;
+        // Load the predictor.
+        long start = System.currentTimeMillis();
+        FramePredictor testPred = new FramePredictor(predFile.getPath());
+        double loadTime = ((double) (System.currentTimeMillis() - start) / 1000);
+        System.err.format("Predictor load test successful. %4.2f seconds.%n", loadTime);
+        // Do we have genomes to test?
+        if (this.testDir == null) {
+            // No.  Write out the frame counts.
+            reportWriter.format("%-8s %8s%n", "Frame", "kmers");
+            for (Frame frm : Frame.all) {
+                System.err.format("%-8s %8d %8d%n", frm, found[frm.ordinal()]);
+            }
+        } else {
+            // Yes.  Load the genomes so we can test the predictor.
+            GenomeDirectory genomes = new GenomeDirectory(this.testDir.getPath());
+            for (Genome myGto : genomes) {
+                Map<String, LocationList> gtoMap = LocationList.createGenomeCodingMap(myGto);
+                // Loop through the contigs.
+                Collection<Contig> allContigs = myGto.getContigs();
+                for (Contig contig : allContigs) {
+                    SequenceDnaKmers contigKmers = new SequenceDnaKmers(contig.getSequence());
+                    LocationList contigLocs = gtoMap.get(contig.getId());
+                    while (contigKmers.nextKmer()) {
+                        int pos = contigKmers.getPos();
+                        Frame predicted = testPred.frameOf(contigKmers);
+                        if (predicted == Frame.XX) {
+                            misses++;
+                        } else {
+                            Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
+                            if (kmerFrame != Frame.XX) {
+                                // Get an immutable copy of the kmer to use as a key.
+                                DnaKmer kmer = contigKmers.getCopy();
+                                if (! kmerFrame.equals(predicted)) {
+                                    testCounts.setBad(kmer);
+                                } else {
+                                    testCounts.setGood(kmer);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Loop through the results, looking for problems.
+            Collection<DnaKmer> results = testCounts.keys();
+            CountMap<Frame> frameCounts = new CountMap<Frame>();
+            int badHits = 0;
+            int goodHits = 0;
+            for (DnaKmer kmer : results) {
+                int good = testCounts.good(kmer);
+                int bad = testCounts.bad(kmer);
+                badHits += bad;
+                goodHits += good;
+                if (bad > 0) {
+                    frameCounts.setBad(testPred.frameOf(kmer));
+                } else {
+                    frameCounts.setGood(testPred.frameOf(kmer));
+                }
+            }
+            // Output what we found.
+            double hitPercent = ((double) (goodHits + badHits) * 100) / (goodHits + badHits + misses);
+            reportWriter.format("Total hits = %d good, %d bad. Percent hits %4.2f. Total misses = %d.%n",
+                    goodHits, badHits, hitPercent, misses);
+            reportWriter.format("%-8s %8s %8s %8s%n", "Frame", "kmers", "goodHits", "badHits");
+            for (Frame frm : Frame.all) {
+                System.err.format("%-8s %8d %8d%n", frm, found[frm.ordinal()],
+                        frameCounts.good(frm), frameCounts.bad(frm));
+            }
+        }
+    }
+
 }
