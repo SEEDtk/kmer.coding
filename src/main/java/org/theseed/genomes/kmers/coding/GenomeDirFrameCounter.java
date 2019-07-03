@@ -127,6 +127,9 @@ public class GenomeDirFrameCounter {
         if (this.inputDir != null) {
             System.err.println("Input directory is " + this.inputGenomes + ".");
         }
+        if (this.testDir != null) {
+            System.err.println("Testing directory is " + this.testDir + ".");
+        }
         System.err.println("Output directory is " + this.outDir + ".");
         System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
         try {
@@ -241,12 +244,13 @@ public class GenomeDirFrameCounter {
             // No.  Write out the frame counts.
             reportWriter.format("%-8s %8s%n", "Frame", "kmers");
             for (Frame frm : Frame.all) {
-                System.err.format("%-8s %8d %8d%n", frm, found[frm.ordinal()]);
+                reportWriter.format("%-8s %8d %8d%n", frm, found[frm.ordinal()]);
             }
         } else {
             // Yes.  Load the genomes so we can test the predictor.
             GenomeDirectory genomes = new GenomeDirectory(this.testDir.getPath());
             for (Genome myGto : genomes) {
+                System.err.println("Testing against " + myGto);
                 Map<String, LocationList> gtoMap = LocationList.createGenomeCodingMap(myGto);
                 // Loop through the contigs.
                 Collection<Contig> allContigs = myGto.getContigs();
@@ -291,12 +295,16 @@ public class GenomeDirFrameCounter {
             }
             // Output what we found.
             double hitPercent = ((double) (goodHits + badHits) * 100) / (goodHits + badHits + misses);
+            reportWriter.format("%d genomes were examined.%n", genomes.size());
             reportWriter.format("Total hits = %d good, %d bad. Percent hits %4.2f. Total misses = %d.%n",
                     goodHits, badHits, hitPercent, misses);
-            reportWriter.format("%-8s %8s %8s %8s%n", "Frame", "kmers", "goodHits", "badHits");
-            for (Frame frm : Frame.all) {
-                System.err.format("%-8s %8d %8d%n", frm, found[frm.ordinal()],
-                        frameCounts.good(frm), frameCounts.bad(frm));
+            reportWriter.format("%-8s %8s %8s %8s %8s%n", "Frame", "kmers", "goodHits", "badHits", "%good");
+            for (Frame frm : Frame.sorted) {
+                int good = frameCounts.good(frm);
+                int bad = frameCounts.bad(frm);
+                double goodPercent = (good <= 0 ? 0 : ((double) (good * 100)) / (good + bad));
+                reportWriter.format("%-8s %8d %8d %8d %8.2f %n", frm, found[frm.ordinal()],
+                        good, bad, goodPercent);
             }
         }
     }

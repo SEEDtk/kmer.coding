@@ -17,6 +17,9 @@ public enum Frame {
     /** array of all good frames */
     public static final Frame[] all = new Frame[] { M0, M2, M1, F0, P1, P2, P0 };
 
+    /** array of all good frames in report order */
+    public static final Frame[] sorted = new Frame[] { M0, M1, M2, F0, P0, P1, P2 };
+
     /** array size for an array of frame data */
     public static final int nFrames = 7;
 
