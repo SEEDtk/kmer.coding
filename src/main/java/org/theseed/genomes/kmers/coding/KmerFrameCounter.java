@@ -9,7 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,6 +19,8 @@ import org.theseed.genomes.Contig;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
+import org.theseed.genomes.kmers.SequenceDnaNormalKmers;
+import org.theseed.genomes.kmers.SequenceDnaSpacedKmers;
 import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
 
@@ -31,25 +33,77 @@ import org.theseed.locations.LocationList;
  *
  * @author Bruce Parrello
  */
-public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
+public class KmerFrameCounter implements Iterable<DnaKmer> {
 
-    // unique ID for serialization
-    private static final long serialVersionUID = 8046566020973057699L;
+    // list of acceptable SequenceDnaKmers types
+    private static final ArrayList<Class<? extends SequenceDnaKmers>> types =
+            new ArrayList<Class<? extends SequenceDnaKmers>>(
+                    Arrays.asList(SequenceDnaNormalKmers.class, SequenceDnaSpacedKmers.class));
 
     // FIELDS
     /** the master array, indexed by frame ordinal and then kmer index */
     private short[][] countArray;
     /** the number of kmer values */
     private int size;
+    /** the kmer size used to generate this object */
+    private int kmerSize;
+    /** the kmer type used to generate this object */
+    private Class<? extends SequenceDnaKmers> kmerType;
 
 
     /**
      * Construct an empty kmer frame counter.
      */
-    public KmerFrameCounter() {
+    public KmerFrameCounter(Class<? extends SequenceDnaKmers> kmerType) {
+        this.kmerSize = DnaKmer.getSize();
         this.size = DnaKmer.maxKmers();
+        this.kmerType = kmerType;
         this.countArray = new short[7][this.size];
         this.clear();
+    }
+
+    /**
+     * Load a kmer frame counter from a file.
+     */
+    public KmerFrameCounter(File inFile) {
+        this.load(inFile);
+    }
+
+    /**
+     * Load this kmer frame counter from the specified file.
+     *
+     * @param inFile	file from which to load
+     */
+    private void load(File inFile) {
+        try {
+            FileInputStream inStream = new FileInputStream(inFile);
+            ObjectInputStream reader = new ObjectInputStream(inStream);
+            // Start with the kmer specs.
+            this.kmerSize = reader.readInt();
+            DnaKmer.setSize(this.kmerSize);
+            this.size = DnaKmer.maxKmers();
+            // Get the kmer type.
+            int typeIdx = reader.readInt();
+            this.kmerType = KmerFrameCounter.types.get(typeIdx);
+            // Now read the big huge array.
+            this.countArray = new short[7][this.size];
+            for (int i = 0; i < 7; i++) {
+                for (int j = 0; j < this.kmerSize; j++) {
+                    this.countArray[i][j] = reader.readShort();
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error loading kmer counter from " + inFile + ".", e);
+        }
+    }
+
+    /**
+     * Load a kmer frame counter from a named file.
+     */
+    public KmerFrameCounter(String string) {
+        File inFile = new File(string);
+        this.load(inFile);
     }
 
     /**
@@ -184,7 +238,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
     /**
      * Count all of the kmers in a specified genome.
      *
-     * @param genome	the genome whose kmers are to be counted
+     * @param genome		the genome whose kmers are to be counted
      */
     public void processGenome(Genome genome) {
         // This will hold the kmer inverse.
@@ -195,7 +249,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
         for (Contig contig : genome.getContigs()) {
             // Get the location list for this contig.
             LocationList contigLocs = contigMap.get(contig.getId());
-            SequenceDnaKmers kmerProcessor = new SequenceDnaKmers(contig.getSequence());
+            SequenceDnaKmers kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
             while (kmerProcessor.nextKmer()) {
                 int pos = kmerProcessor.getPos();
                 Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
@@ -224,43 +278,25 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
      * @param fileName	name of the output file
      * @throws IOException
      */
-    public void save(String fileName) throws IOException {
+    public void save(String fileName) {
+        try {
         FileOutputStream outFile = new FileOutputStream(fileName);
-        ObjectOutputStream outStream = new ObjectOutputStream(outFile);
-        outStream.writeObject(this);
-        outStream.close();
-        outFile.close();
-    }
-
-    /**
-     * Load a kmer counter object from a file
-     *
-     * @param fileName	path and name of the input file
-     *
-     * @return the kmer counter object serialized to the file
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    public static KmerFrameCounter load(File fileName) throws IOException, ClassNotFoundException {
-        return KmerFrameCounter.load(fileName.getPath());
-    }
-
-    /**
-     * Load a kmer counter object from a file
-     *
-     * @param fileName	name of the input file
-     *
-     * @return the kmer counter object serialized to the file
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    public static KmerFrameCounter load(String fileName) throws IOException, ClassNotFoundException {
-        FileInputStream inFile = new FileInputStream(fileName);
-        ObjectInputStream inStream = new ObjectInputStream(inFile);
-        KmerFrameCounter retVal = (KmerFrameCounter) inStream.readObject();
-        inStream.close();
-        inFile.close();
-        return retVal;
+        ObjectOutputStream writer = new ObjectOutputStream(outFile);
+        // Start with the kmer specs.
+        writer.write(this.kmerSize);
+        // Save the kmer type.
+        int typeIdx = KmerFrameCounter.types.indexOf(this.kmerType);
+        writer.write(typeIdx);
+        // Now write the big huge array.
+        for (int i = 0; i < 7; i++) {
+            for (int j = 0; j < this.kmerSize; j++) {
+                writer.write(this.countArray[i][j]);
+            }
+        }
+        writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing kmer data to " + fileName + ".", e);
+        }
     }
 
     /**
@@ -271,6 +307,11 @@ public class KmerFrameCounter implements Iterable<DnaKmer>, Serializable {
      */
     public void save(File outFile) throws IOException {
         this.save(outFile.getPath());
+    }
+
+
+    private void readObject(ObjectInputStream inStream) {
+
     }
 
 }

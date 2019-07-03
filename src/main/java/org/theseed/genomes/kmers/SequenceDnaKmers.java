@@ -9,15 +9,19 @@ package org.theseed.genomes.kmers;
  * @author Bruce Parrello
  *
  */
-public class SequenceDnaKmers extends DnaKmer {
+public abstract class SequenceDnaKmers extends DnaKmer {
 
     // FIELDS
 
     /** sequence to iterate through */
-    private String sequence;
+    protected String sequence;
     /** current position in the sequence */
-    private int pos;
-    /**
+    protected int pos;
+
+    // Create a blank sequence kmer traversal object.
+    protected SequenceDnaKmers() { }
+
+
     /**
      * Create a kmer object for extracting all the kmers in a specific DNA sequence.
      *
@@ -25,11 +29,22 @@ public class SequenceDnaKmers extends DnaKmer {
      */
     public SequenceDnaKmers(String sequence) {
         super();
+        init(sequence);
+    }
+
+
+    /**
+     * Initialize this object to traverse the specified sequence.
+     *
+     * @param sequence	sequence to traverse
+     */
+    protected void init(String sequence) {
         // Save the sequence.
         this.sequence = sequence;
         // Denote we haven't started.
         this.pos = 1;
     }
+
 
     /**
      * @return the current position in the sequence
@@ -43,22 +58,32 @@ public class SequenceDnaKmers extends DnaKmer {
      *
      * @return TRUE if successful, FALSE if we are at end-of-sequence
      */
-    public boolean nextKmer() {
-        this.pos++;
-        int retVal = DnaKmer.fromString(this.sequence, this.pos);
-        while (retVal == DnaKmer.NULL) {
-            this.pos++;
-            retVal = DnaKmer.fromString(this.sequence, this.pos);
-        }
-        super.setIdx(retVal);
-        return (retVal != DnaKmer.EOF);
-    }
+    public abstract boolean nextKmer();
 
     /**
      * @return a copy of the kmer at the current position
      */
     public DnaKmer getCopy() {
         return new DnaKmer(this.idx());
+    }
+
+    /**
+     * Create a sequence kmer-traversal object for the specified kmer type.
+     *
+     * @param sequenceClass	class representing the type of kmer to use
+     * @param sequence		sequence to traverse
+     *
+     * @return	an object of the proper subclass type to traverse the kmers in the sequence
+     */
+    public static SequenceDnaKmers build(Class<? extends SequenceDnaKmers> sequenceClass, String sequence) {
+        SequenceDnaKmers retVal;
+        try {
+            retVal = sequenceClass.newInstance();
+            retVal.init(sequence);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating kmer-traversal object.", e);
+        }
+        return retVal;
     }
 
 }

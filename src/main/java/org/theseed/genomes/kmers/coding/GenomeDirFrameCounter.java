@@ -19,6 +19,8 @@ import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
+import org.theseed.genomes.kmers.SequenceDnaNormalKmers;
+import org.theseed.genomes.kmers.SequenceDnaSpacedKmers;
 import org.theseed.genomes.kmers.predictor.FramePredictor;
 import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
@@ -31,7 +33,8 @@ import com.github.cliftonlabs.json_simple.JsonException;
  * This is the primary class for computing the KmerFrameCounter from a directory of genomes.
  * The command-line options are
  *
- * 	K		kmer size (default is 15)
+ * 	-K		kmer size and type (default is 15); use a number for normal kmers, a number followed
+ * 			by "p" for spaced kmers
  * 	-t		minimum best-fraction for a useful kmer (default is 0.80)
  * 	-m		minimum best-hits for a useful kmer (default is 30)
  * 	-i		input directory containing the genomes-- if omitted, a previously-built database is
@@ -48,16 +51,44 @@ public class GenomeDirFrameCounter {
     /** object to manage input directory */
     private GenomeDirectory inputGenomes;
 
+    /** type of kmer processing */
+    Class<? extends SequenceDnaKmers> kmerType;
+
     // COMMAND LINE
 
     /** help option */
     @Option(name="-h", aliases={"--help"}, help=true)
     private boolean help;
 
-    /** kmer size to use (default 15) */
-    @Option(name="-K", aliases={"--kmer"}, metaVar="15", usage="kmer size")
-    private void setKmer(int newSize) {
-        DnaKmer.setSize(newSize);
+    /** kmer size and type to use (default 15); suffix "p" indicates spaced kmers
+     * @throws CmdLineException */
+    @Option(name="-K", aliases={"--kmer"}, metaVar="15", usage="kmer size (XX for normal, XXp for spaced)")
+    private void setKmer(String newSize) {
+        int realSize;
+        // Determine the kmer type.
+        if (newSize.endsWith("p")) {
+            kmerType = SequenceDnaSpacedKmers.class;
+            realSize = Integer.valueOf(newSize.substring(0, newSize.length()));
+            // Insure the size is valid for a spaced kmer.
+            if (realSize % 2 != 0) {
+                throw new IllegalArgumentException("Spaced kmer sizes must be a multiple of 2.");
+            }
+        } else {
+            kmerType = SequenceDnaNormalKmers.class;
+            realSize = Integer.valueOf(newSize);
+            // Insure the size is valid for a normal kmer.
+            if (realSize % 3 != 0) {
+                throw new IllegalArgumentException("Normal kmer sizes must be a multiple of 3.");
+            }
+        }
+        // Validate the kmer size.
+        if (realSize < 0) {
+            throw new IllegalArgumentException("Kmer size cannot be negative.");
+        } else if (realSize > 15) {
+            throw new IllegalArgumentException("Maximum kmer size is 15.");
+        }
+        // Store the kmer size.
+        DnaKmer.setSize(realSize);
     }
 
     /** genome directory for optional testing set */
@@ -139,7 +170,7 @@ public class GenomeDirFrameCounter {
             KmerFrameCounter bigCounter;
             if (this.inputDir != null) {
                 // Here we have to create the kmer counter from the input directory.
-                bigCounter = new KmerFrameCounter();
+                bigCounter = new KmerFrameCounter(this.kmerType);
                 // Process the genomes.
                 int gCount = 0;
                 long start = System.currentTimeMillis();
@@ -161,7 +192,7 @@ public class GenomeDirFrameCounter {
                 // Here we have to reload an existing kmer counter database.
                 System.err.println("Loading saved kmer database.");
                 long start = System.currentTimeMillis();
-                bigCounter = KmerFrameCounter.load(saveFile);
+                bigCounter = new KmerFrameCounter(saveFile);
                 double timeToLoad = (System.currentTimeMillis() - start) / 1000;
                 System.err.printf("%4.2f seconds to load database.\n", timeToLoad);
             }
@@ -255,7 +286,7 @@ public class GenomeDirFrameCounter {
                 // Loop through the contigs.
                 Collection<Contig> allContigs = myGto.getContigs();
                 for (Contig contig : allContigs) {
-                    SequenceDnaKmers contigKmers = new SequenceDnaKmers(contig.getSequence());
+                    SequenceDnaKmers contigKmers = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
                     LocationList contigLocs = gtoMap.get(contig.getId());
                     while (contigKmers.nextKmer()) {
                         int pos = contigKmers.getPos();

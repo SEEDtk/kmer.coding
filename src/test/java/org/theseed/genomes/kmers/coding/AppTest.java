@@ -18,6 +18,7 @@ import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
+import org.theseed.genomes.kmers.SequenceDnaNormalKmers;
 import org.theseed.locations.Frame;
 import org.theseed.locations.Location;
 import org.theseed.locations.LocationList;
@@ -122,7 +123,7 @@ public class AppTest
         kmer1 = new DnaKmer(mySequence, 20);
         assertTrue("Kmer length did not set properly.", kmer1.idx() >= 0);
         assertEquals("Kmer index did not recurse at new length.", mySequence.substring(19, 29), kmer1.toString());
-        SequenceDnaKmers iterator = new SequenceDnaKmers(mySequence);
+        SequenceDnaKmers iterator = new SequenceDnaNormalKmers(mySequence);
         while (iterator.nextKmer()) {
             int idx = iterator.idx();
             assertTrue("Invalid kmer returned at position " + iterator.getPos() + ".", idx >= 0);
@@ -426,13 +427,13 @@ public class AppTest
 
     /**
      * The test for the insanely big kmer counter.
-     * @throws IOException
-     * @throws ClassNotFoundException
+     *
+     * @throws FileNotFoundException
      */
-    public void testKmerCounter() throws IOException, ClassNotFoundException {
+    public void testKmerCounter() throws FileNotFoundException {
         // Use small kmers to fit in debugger.
         DnaKmer.setSize(9);
-        KmerFrameCounter bigCounter = new KmerFrameCounter();
+        KmerFrameCounter bigCounter = new KmerFrameCounter(SequenceDnaNormalKmers.class);
         // Choose a kmer to manipulate.
         DnaKmer myKmer = new DnaKmer("actgtccat");
         // Verify that an uncounted kmer's best frame is invalid.
@@ -521,7 +522,7 @@ public class AppTest
         // Erase the old kmer counter.
         bigCounter = null;
         // Read in the saved one.
-        bigCounter = KmerFrameCounter.load("kmerTest.ser");
+        bigCounter = new KmerFrameCounter("kmerTest.ser");
         // Test the saved values.
         assertEquals("Error in saveMyP3.", saveMyP3, bigCounter.getCount(myKmer, Frame.P0));
         assertEquals("Error in saveMyM1.", saveMyM1, bigCounter.getCount(myKmer, Frame.M1));
@@ -545,6 +546,8 @@ public class AppTest
             i++;
         }
     }
+
+    // TODO SequenceDnaSpacedKmers test
 
 }
 
