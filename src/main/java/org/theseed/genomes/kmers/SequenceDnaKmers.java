@@ -42,7 +42,7 @@ public abstract class SequenceDnaKmers extends DnaKmer {
         // Save the sequence.
         this.sequence = sequence;
         // Denote we haven't started.
-        this.pos = 1;
+        this.pos = 0;
     }
 
 
@@ -58,7 +58,26 @@ public abstract class SequenceDnaKmers extends DnaKmer {
      *
      * @return TRUE if successful, FALSE if we are at end-of-sequence
      */
-    public abstract boolean nextKmer();
+    public boolean nextKmer() {
+        int retVal = DnaKmer.NULL;
+        while (retVal == DnaKmer.NULL) {
+            this.pos++;
+            String sequence = this.getLetters(this.sequence, this.pos);
+            retVal = DnaKmer.fromString(sequence, 1);
+        }
+        super.setIdx(retVal);
+        return (retVal != DnaKmer.EOF);
+    }
+
+    /**
+     * Get the sequence of letters at the current position used to build a kmer of this type.
+     *
+     * @param sequence	source sequence from which the letters should be taken
+     * @param pos		current position in the sequence
+     *
+     * @return the string of letters; if we are close to the end, it will be too short
+     */
+    protected abstract String getLetters(String sequence, int pos);
 
     /**
      * @return a copy of the kmer at the current position

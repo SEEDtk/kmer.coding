@@ -19,6 +19,7 @@ import org.theseed.genomes.GenomeDirectory;
 import org.theseed.genomes.kmers.DnaKmer;
 import org.theseed.genomes.kmers.SequenceDnaKmers;
 import org.theseed.genomes.kmers.SequenceDnaNormalKmers;
+import org.theseed.genomes.kmers.SequenceDnaSpacedKmers;
 import org.theseed.locations.Frame;
 import org.theseed.locations.Location;
 import org.theseed.locations.LocationList;
@@ -132,7 +133,19 @@ public class AppTest
             assertEquals("Iterated kmer did not recurse at position " + pos + ".",
                     mySequence.substring(pos-1, pos+9), kmer);
         }
-        assertEquals("Iterator ended too soon.", mySequence.length() - 8, iterator.getPos());
+        assertEquals("Iterator ended too soon.", 52, iterator.getPos());
+        iterator = new SequenceDnaSpacedKmers(mySequence);
+        while (iterator.nextKmer()) {
+            int idx = iterator.idx();
+            assertTrue("Invalid kmer returned at position " + iterator.getPos() + ".", idx >= 0);
+            int pos = iterator.getPos();
+            String kmer = iterator.toString();
+            for (int k = 0; k < 5; k++) {
+                assertEquals("Error at position " + 2*k + " in spaced kmer for position " + pos + ".",
+                        mySequence.substring(pos+3*k-1, pos+3*k), kmer.substring(2*k, 2*k+1));
+            }
+        }
+        assertEquals("Iterator ended too soon.", 47, iterator.getPos());
         // Test kmer comparison.
         DnaKmer kmerA = new DnaKmer("actccagcaagcatc");
         DnaKmer kmerB = new DnaKmer("actccagcaagcatc");
@@ -546,8 +559,6 @@ public class AppTest
             i++;
         }
     }
-
-    // TODO SequenceDnaSpacedKmers test
 
 }
 

@@ -65,21 +65,28 @@ public class Contig {
      * @return the id
      */
     public String getId() {
-        return id;
+        return this.id;
     }
 
     /**
      * @return the sequence
      */
     public String getSequence() {
-        return sequence;
+        return this.sequence;
+    }
+
+    /**
+     * @return the reverse compliment of the sequence
+     */
+    public String getRSequence() {
+        return reverse(this.sequence);
     }
 
     /**
      * @return the geneticCode
      */
     public int getGeneticCode() {
-        return geneticCode;
+        return this.geneticCode;
     }
 
     /**

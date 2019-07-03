@@ -21,9 +21,18 @@ public class SequenceDnaSpacedKmers extends SequenceDnaKmers {
     }
 
     @Override
-    public boolean nextKmer() {
-        // TODO get next spaced kmer
-        return false;
+    protected String getLetters(String sequence, int pos) {
+        StringBuilder retVal = new StringBuilder(DnaKmer.getSize());
+        // Figure out position of the first character pair that won't be in the kmer.
+        int n = pos + DnaKmer.getSize() / 2 * 3 - 1;
+        int limit = sequence.length() - 2;
+        if (n >= limit) n = limit;
+        for (int i = pos-1; i < n; i += 3) {
+            retVal.append(sequence.charAt(i));
+            retVal.append(sequence.charAt(i+1));
+        }
+        return retVal.toString();
     }
+
 
 }

@@ -58,7 +58,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         this.kmerSize = DnaKmer.getSize();
         this.size = DnaKmer.maxKmers();
         this.kmerType = kmerType;
-        this.countArray = new short[7][this.size];
+        this.countArray = new short[Frame.nFrames][this.size];
         this.clear();
     }
 
@@ -86,9 +86,9 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
             int typeIdx = reader.readInt();
             this.kmerType = KmerFrameCounter.types.get(typeIdx);
             // Now read the big huge array.
-            this.countArray = new short[7][this.size];
-            for (int i = 0; i < 7; i++) {
-                for (int j = 0; j < this.kmerSize; j++) {
+            this.countArray = new short[Frame.nFrames][this.size];
+            for (int i = 0; i < Frame.nFrames; i++) {
+                for (int j = 0; j < this.size; j++) {
                     this.countArray[i][j] = reader.readShort();
                 }
             }
@@ -132,7 +132,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      */
     private int iCount(DnaKmer kmer, int ordinal) {
         int retVal = 0;
-        if (ordinal < 7) {
+        if (ordinal < Frame.nFrames) {
             retVal = (this.countArray[ordinal][kmer.idx()]) & 0xFFFF;
         }
         return retVal;
@@ -157,9 +157,9 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      * @param kmer	the relevant kmer
      */
     public Frame getBest(DnaKmer kmer) {
-        int best = 7;
+        int best = Frame.nFrames;
         int bestCount = 0;
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < Frame.nFrames; i++) {
             int count = this.iCount(kmer, i);
             if (count > bestCount) {
                 bestCount = count;
@@ -178,7 +178,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         double retVal = 0;
         int frmCount = this.getCount(kmer, frm);
         int total = 0;
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < Frame.nFrames; i++) {
             total += this.iCount(kmer, i);
         }
         if (total > 0) {
@@ -241,33 +241,43 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      * @param genome		the genome whose kmers are to be counted
      */
     public void processGenome(Genome genome) {
-        // This will hold the kmer inverse.
-        DnaKmer invKmer = new DnaKmer();
         // Get the map of location lists.
         Map<String, LocationList> contigMap = LocationList.createGenomeCodingMap(genome);
         // Loop through the contigs from the genome.
         for (Contig contig : genome.getContigs()) {
             // Get the location list for this contig.
             LocationList contigLocs = contigMap.get(contig.getId());
+            // Count kmers on the plus strand.
             SequenceDnaKmers kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
-            while (kmerProcessor.nextKmer()) {
-                int pos = kmerProcessor.getPos();
-                Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
-                if (kmerFrame != Frame.XX) {
-                    this.increment(kmerProcessor, kmerFrame);
-                    invKmer.setRev(kmerProcessor);
-                    this.increment(invKmer, kmerFrame.rev());
-                }
-            }
+            countSequence(contigLocs, kmerProcessor);
+            // Count kmers on the minus strand.
+            kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getRSequence());
+            countSequence(contigLocs, kmerProcessor);
         }
 
+    }
+
+    /**
+     * Count all of the kmers in a specified sequence.
+     *
+     * @param contigLocs	location list used to compute the frame information
+     * @param kmerProcessor	SequenceDnaKmers object for getting kmers out of the sequence
+     */
+    private void countSequence(LocationList contigLocs, SequenceDnaKmers kmerProcessor) {
+        while (kmerProcessor.nextKmer()) {
+            int pos = kmerProcessor.getPos();
+            Frame kmerFrame = contigLocs.computeRegionFrame(pos, pos + DnaKmer.getSize() - 1);
+            if (kmerFrame != Frame.XX) {
+                this.increment(kmerProcessor, kmerFrame);
+            }
+        }
     }
 
     /**
      * Erase all the counts so we can start over.
      */
     public void clear() {
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < Frame.nFrames; i++) {
             Arrays.fill(this.countArray[i], (short) 0);
         }
     }
@@ -280,20 +290,20 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      */
     public void save(String fileName) {
         try {
-        FileOutputStream outFile = new FileOutputStream(fileName);
-        ObjectOutputStream writer = new ObjectOutputStream(outFile);
-        // Start with the kmer specs.
-        writer.write(this.kmerSize);
-        // Save the kmer type.
-        int typeIdx = KmerFrameCounter.types.indexOf(this.kmerType);
-        writer.write(typeIdx);
-        // Now write the big huge array.
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < this.kmerSize; j++) {
-                writer.write(this.countArray[i][j]);
+            FileOutputStream outFile = new FileOutputStream(fileName);
+            ObjectOutputStream writer = new ObjectOutputStream(outFile);
+            // Start with the kmer specs.
+            writer.writeInt(this.kmerSize);
+            // Save the kmer type.
+            int typeIdx = KmerFrameCounter.types.indexOf(this.kmerType);
+            writer.writeInt(typeIdx);
+            // Now write the big huge array.
+            for (int i = 0; i < Frame.nFrames; i++) {
+                for (int j = 0; j < this.size; j++) {
+                    writer.writeShort(this.countArray[i][j]);
+                }
             }
-        }
-        writer.close();
+            writer.close();
         } catch (IOException e) {
             throw new RuntimeException("Error writing kmer data to " + fileName + ".", e);
         }

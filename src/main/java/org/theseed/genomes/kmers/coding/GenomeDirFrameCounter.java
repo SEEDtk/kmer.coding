@@ -81,12 +81,6 @@ public class GenomeDirFrameCounter {
                 throw new IllegalArgumentException("Normal kmer sizes must be a multiple of 3.");
             }
         }
-        // Validate the kmer size.
-        if (realSize < 0) {
-            throw new IllegalArgumentException("Kmer size cannot be negative.");
-        } else if (realSize > 15) {
-            throw new IllegalArgumentException("Maximum kmer size is 15.");
-        }
         // Store the kmer size.
         DnaKmer.setSize(realSize);
     }

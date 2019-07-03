@@ -21,15 +21,11 @@ public class SequenceDnaNormalKmers extends SequenceDnaKmers {
     }
 
     @Override
-    public boolean nextKmer() {
-        this.pos++;
-        int retVal = DnaKmer.fromString(this.sequence, this.pos);
-        while (retVal == DnaKmer.NULL) {
-            this.pos++;
-            retVal = DnaKmer.fromString(this.sequence, this.pos);
-        }
-        super.setIdx(retVal);
-        return (retVal != DnaKmer.EOF);
+    protected String getLetters(String sequence, int pos) {
+        int i = pos - 1;
+        int n = i + DnaKmer.getSize();
+        if (n > sequence.length()) n = sequence.length();
+        return sequence.substring(i, n);
     }
 
 }
