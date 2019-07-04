@@ -49,9 +49,8 @@ public class SequenceDnaSpacedKmers extends SequenceDnaKmers {
 
     @Override
     public void reverse() {
-        // Get the letters at the current position.
-        String myLetters = this.getKmerRegion(1);
-        this.setIdx(DnaKmer.fromRString(myLetters));
+        int rIdx = this.rIdx();
+        this.setIdx(rIdx);
     }
 
     @Override
