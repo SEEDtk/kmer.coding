@@ -374,7 +374,7 @@ public abstract class Location implements Comparable<Location>, Cloneable {
             retVal = true;
         } else if (obj == null) {
             retVal = false;
-        } else if (getClass() != obj.getClass()) {
+        } else if (! (obj instanceof Location)) {
             retVal = false;
         } else {
             Location other = (Location) obj;

@@ -114,7 +114,7 @@ public class Region implements Comparable<Region> {
             return true;
         if (obj == null)
             return false;
-        if (getClass() != obj.getClass())
+        if (! (obj instanceof Region))
             return false;
         Region other = (Region) obj;
         if (this.left != other.left)
