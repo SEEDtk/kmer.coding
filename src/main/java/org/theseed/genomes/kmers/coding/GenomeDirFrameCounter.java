@@ -26,8 +26,6 @@ import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
 import org.theseed.utils.CountMap;
 
-import com.github.cliftonlabs.json_simple.JsonException;
-
 /**
  *
  * This is the primary class for computing the KmerFrameCounter from a directory of genomes.
@@ -253,10 +251,9 @@ public class GenomeDirFrameCounter {
      *
      * @throws NumberFormatException
      * @throws IOException
-     * @throws JsonException
      */
     private void testFramePredictions(File predFile, PrintWriter reportWriter, int[] found)
-            throws NumberFormatException, IOException, JsonException {
+            throws NumberFormatException, IOException {
         // We will track counts in here.
         CountMap<DnaKmer> testCounts = new CountMap<DnaKmer>();
         int misses = 0;
