@@ -14,6 +14,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.theseed.counters.QualityCountMap;
 import org.theseed.genomes.Contig;
 import org.theseed.genomes.Genome;
 import org.theseed.genomes.GenomeDirectory;
@@ -24,7 +25,6 @@ import org.theseed.genomes.kmers.SequenceDnaSpacedKmers;
 import org.theseed.genomes.kmers.predictor.FramePredictor;
 import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
-import org.theseed.utils.CountMap;
 
 /**
  *
@@ -255,7 +255,7 @@ public class GenomeDirFrameCounter {
     private void testFramePredictions(File predFile, PrintWriter reportWriter, int[] found)
             throws NumberFormatException, IOException {
         // We will track counts in here.
-        CountMap<DnaKmer> testCounts = new CountMap<DnaKmer>();
+        QualityCountMap<DnaKmer> testCounts = new QualityCountMap<DnaKmer>();
         int misses = 0;
         // Load the predictor.
         long start = System.currentTimeMillis();
@@ -302,7 +302,7 @@ public class GenomeDirFrameCounter {
             }
             // Loop through the results, looking for problems.
             Collection<DnaKmer> results = testCounts.keys();
-            CountMap<Frame> frameCounts = new CountMap<Frame>();
+            QualityCountMap<Frame> frameCounts = new QualityCountMap<Frame>();
             int badHits = 0;
             int goodHits = 0;
             for (DnaKmer kmer : results) {
