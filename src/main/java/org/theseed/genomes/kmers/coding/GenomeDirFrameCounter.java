@@ -154,7 +154,6 @@ public class GenomeDirFrameCounter {
             System.err.println("Testing directory is " + this.testDir + ".");
         }
         System.err.println("Output directory is " + this.outDir + ".");
-        System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
         try {
             // Compute the kmer file name.
             File saveFile = new File(this.outDir, "kmers.ser");
@@ -162,6 +161,7 @@ public class GenomeDirFrameCounter {
             KmerFrameCounter bigCounter;
             if (this.inputDir != null) {
                 // Here we have to create the kmer counter from the input directory.
+                System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
                 bigCounter = new KmerFrameCounter(this.kmerType);
                 // Process the genomes.
                 int gCount = 0;
@@ -188,6 +188,7 @@ public class GenomeDirFrameCounter {
                 this.kmerType = bigCounter.getKmerType();
                 double timeToLoad = ((double) (System.currentTimeMillis() - start)) / 1000;
                 System.err.printf("%4.2f seconds to load database.\n", timeToLoad);
+                System.err.println("Kmer size is " + DnaKmer.getSize() + ".");
             }
             System.err.println("Searching for useful kmers.");
             // Open the kmer output file.

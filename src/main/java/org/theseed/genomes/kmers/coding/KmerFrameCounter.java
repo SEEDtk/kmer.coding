@@ -3,12 +3,12 @@
  */
 package org.theseed.genomes.kmers.coding;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -77,7 +77,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
     private void load(File inFile) {
         try {
             FileInputStream inStream = new FileInputStream(inFile);
-            ObjectInputStream reader = new ObjectInputStream(inStream);
+            DataInputStream reader = new DataInputStream(inStream);
             // Start with the kmer specs.
             this.kmerSize = reader.readInt();
             DnaKmer.setSize(this.kmerSize);
@@ -298,7 +298,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
     public void save(String fileName) {
         try {
             FileOutputStream outFile = new FileOutputStream(fileName);
-            ObjectOutputStream writer = new ObjectOutputStream(outFile);
+            DataOutputStream writer = new DataOutputStream(outFile);
             // Start with the kmer specs.
             writer.writeInt(this.kmerSize);
             // Save the kmer type.
