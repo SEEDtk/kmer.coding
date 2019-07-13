@@ -88,11 +88,11 @@ public class GenomeDirFrameCounter {
     private File testDir;
 
     /** minimum fraction for a kmer to be useful */
-    @Option(name="-t", aliases={"--threshold"}, metaVar="0.8", usage="best-percent threshold for a useful kmer")
+    @Option(name="-t", aliases={"--threshold"}, metaVar="0.8", usage="best-fraction threshold for a useful kmer")
     private double threshold;
 
     /** minimum hits to the best frame for a kmer to be useful */
-    @Option(name="-m", aliases= {"--minHits"}, metaVar="0", usage="minimum hits in the best frame for a useful kmer")
+    @Option(name="-m", aliases= {"--minHits"}, metaVar="30", usage="minimum hits in the best frame for a useful kmer")
     private int minHits;
 
     /** input directory name; if omitted, the kmer database is reloaded from the output directory */

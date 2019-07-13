@@ -60,6 +60,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
         this.kmerType = kmerType;
         this.countArray = new short[Frame.nFrames][this.size];
         this.clear();
+        assert(this.kmerType != null);
     }
 
     /**
