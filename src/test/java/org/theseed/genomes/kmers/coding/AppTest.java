@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,7 +35,7 @@ public class AppTest
     public AppTest( String testName ) throws NumberFormatException, IOException
     {
         super( testName );
-        this.myGto = new Genome("src/test/gto_test/1313.7001.gto");
+        this.myGto = new Genome(new File("src/test/gto_test", "/1313.7001.gto"));
     }
 
     /**
