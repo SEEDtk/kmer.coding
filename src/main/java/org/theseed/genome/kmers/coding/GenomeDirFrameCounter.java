@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes.kmers.coding;
+package org.theseed.genome.kmers.coding;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,14 +15,14 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.theseed.counters.QualityCountMap;
-import org.theseed.genomes.Contig;
-import org.theseed.genomes.Genome;
-import org.theseed.genomes.GenomeDirectory;
-import org.theseed.genomes.kmers.DnaKmer;
-import org.theseed.genomes.kmers.SequenceDnaKmers;
-import org.theseed.genomes.kmers.SequenceDnaNormalKmers;
-import org.theseed.genomes.kmers.SequenceDnaSpacedKmers;
-import org.theseed.genomes.kmers.predictor.FramePredictor;
+import org.theseed.genome.Contig;
+import org.theseed.genome.Genome;
+import org.theseed.genome.GenomeDirectory;
+import org.theseed.genome.kmers.DnaKmer;
+import org.theseed.genome.kmers.SequenceDnaKmers;
+import org.theseed.genome.kmers.SequenceDnaNormalKmers;
+import org.theseed.genome.kmers.SequenceDnaSpacedKmers;
+import org.theseed.genome.kmers.predictor.FramePredictor;
 import org.theseed.locations.Frame;
 import org.theseed.locations.LocationList;
 

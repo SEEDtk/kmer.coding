@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes.kmers;
+package org.theseed.genome.kmers;
 
 /**
  * This class handles spaced kmers.  A spaced kmer pulls the first two of three characters out of

@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes.kmers;
+package org.theseed.genome.kmers;
 
 /**
  * This class extracts normal kmers from a contig.  Normal kmers correspond character-for-character

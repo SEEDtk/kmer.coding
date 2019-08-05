@@ -1,14 +1,14 @@
 /**
  *
  */
-package org.theseed.genomes.kmers.predictor;
+package org.theseed.genome.kmers.predictor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.theseed.genomes.kmers.DnaKmer;
+import org.theseed.genome.kmers.DnaKmer;
 import org.theseed.locations.Frame;
 
 /**

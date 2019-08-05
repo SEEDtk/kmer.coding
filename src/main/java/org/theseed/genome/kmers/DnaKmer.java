@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes.kmers;
+package org.theseed.genome.kmers;
 
 /**
  * This class represents a DNA kmer.  All the DNA kmers have a fixed length determined at runtime,

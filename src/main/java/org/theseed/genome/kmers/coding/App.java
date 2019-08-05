@@ -1,4 +1,4 @@
-package org.theseed.genomes.kmers.coding;
+package org.theseed.genome.kmers.coding;
 
 /**
  *

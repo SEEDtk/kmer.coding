@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.genomes.kmers;
+package org.theseed.genome.kmers;
 
 /**
  * Class for looping through the kmers in a DNA sequence.
