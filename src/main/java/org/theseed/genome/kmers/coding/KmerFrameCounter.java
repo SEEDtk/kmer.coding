@@ -22,7 +22,7 @@ import org.theseed.genome.kmers.SequenceDnaKmers;
 import org.theseed.genome.kmers.SequenceDnaNormalKmers;
 import org.theseed.genome.kmers.SequenceDnaSpacedKmers;
 import org.theseed.locations.Frame;
-import org.theseed.locations.LocationList;
+import org.theseed.locations.DiscreteLocationList;
 
 /**
  *
@@ -243,11 +243,11 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      */
     public void processGenome(Genome genome) {
         // Get the map of location lists.
-        Map<String, LocationList> contigMap = LocationList.createGenomeCodingMap(genome);
+        Map<String, DiscreteLocationList> contigMap = DiscreteLocationList.createGenomeCodingMap(genome);
         // Loop through the contigs from the genome.
         for (Contig contig : genome.getContigs()) {
             // Get the location list for this contig.
-            LocationList contigLocs = contigMap.get(contig.getId());
+            DiscreteLocationList contigLocs = contigMap.get(contig.getId());
             // Count kmers on this sequence.
             SequenceDnaKmers kmerProcessor = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
             countSequence(contigLocs, kmerProcessor);
@@ -261,7 +261,7 @@ public class KmerFrameCounter implements Iterable<DnaKmer> {
      * @param contigLocs	location list used to compute the frame information
      * @param kmerProcessor	SequenceDnaKmers object for getting kmers out of the sequence
      */
-    private void countSequence(LocationList contigLocs, SequenceDnaKmers kmerProcessor) {
+    private void countSequence(DiscreteLocationList contigLocs, SequenceDnaKmers kmerProcessor) {
         // Loop through the sequence.
         while (kmerProcessor.nextKmer()) {
             int pos = kmerProcessor.getPos();

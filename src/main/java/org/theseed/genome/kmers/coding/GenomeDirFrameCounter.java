@@ -24,7 +24,7 @@ import org.theseed.genome.kmers.SequenceDnaNormalKmers;
 import org.theseed.genome.kmers.SequenceDnaSpacedKmers;
 import org.theseed.genome.kmers.predictor.FramePredictor;
 import org.theseed.locations.Frame;
-import org.theseed.locations.LocationList;
+import org.theseed.locations.DiscreteLocationList;
 
 /**
  *
@@ -275,12 +275,12 @@ public class GenomeDirFrameCounter {
             GenomeDirectory genomes = new GenomeDirectory(this.testDir.getPath());
             for (Genome myGto : genomes) {
                 System.err.println("Testing against " + myGto);
-                Map<String, LocationList> gtoMap = LocationList.createGenomeCodingMap(myGto);
+                Map<String, DiscreteLocationList> gtoMap = DiscreteLocationList.createGenomeCodingMap(myGto);
                 // Loop through the contigs.
                 Collection<Contig> allContigs = myGto.getContigs();
                 for (Contig contig : allContigs) {
                     SequenceDnaKmers contigKmers = SequenceDnaKmers.build(this.kmerType, contig.getSequence());
-                    LocationList contigLocs = gtoMap.get(contig.getId());
+                    DiscreteLocationList contigLocs = gtoMap.get(contig.getId());
                     while (contigKmers.nextKmer()) {
                         int pos = contigKmers.getPos();
                         Frame predicted = testPred.frameOf(contigKmers);
